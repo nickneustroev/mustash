@@ -1,4 +1,5 @@
 import { SpotifyRateLimitError } from "./errors.js";
+import { generateRecentPlaylistCoverJpeg } from "./playlist-cover.js";
 import type { Logger } from "./types.js";
 import type { SpotifyClient } from "./spotify-client.js";
 
@@ -116,6 +117,16 @@ export class LikedRecentSyncService {
       );
       this.playlistIdsByWindow.set(windowSize, created.id);
       this.logger.info(`Liked recent playlist created (${playlistName}).`);
+
+      try {
+        const coverJpeg = await generateRecentPlaylistCoverJpeg(windowSize);
+        await this.spotifyClient.uploadPlaylistCoverImage(created.id, coverJpeg.toString("base64"));
+        this.logger.info(`Liked recent playlist cover uploaded (${playlistName}).`);
+      } catch (error) {
+        this.logger.warn(
+          `Failed to upload cover for playlist ${playlistName}: ${(error as Error).message}`,
+        );
+      }
     }
   }
 }

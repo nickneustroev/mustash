@@ -153,6 +153,20 @@ export class SpotifyClient {
     }
   }
 
+  public async uploadPlaylistCoverImage(playlistId: string, jpegBase64: string): Promise<void> {
+    await this.requestWithAuth(
+      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/images`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "image/jpeg",
+        },
+        body: jpegBase64,
+      },
+      true,
+    );
+  }
+
   public async getRecentlyPlayed(limit: number): Promise<RecentlyPlayedItem[]> {
     const url = `https://api.spotify.com/v1/me/player/recently-played?limit=${encodeURIComponent(String(limit))}`;
     const response = await this.requestWithAuth(url, { method: "GET" }, true);

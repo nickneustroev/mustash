@@ -137,8 +137,9 @@ API:
 ## 9. Необходимые scopes
 
 1. `user-library-read`
-2. `playlist-read-private`
-3. `playlist-modify-private`
+2. `ugc-image-upload` (для загрузки обложки при создании плейлиста)
+3. `playlist-read-private`
+4. `playlist-modify-private`
 
 Опционально:
 
@@ -160,3 +161,4 @@ API:
 2. Добавление в избранное отражается в плейлистах в пределах `LIKED_RECENT_SYNC_INTERVAL_MS`.
 3. Удаление из избранного отражается так же.
 4. Конфигурация окон полностью управляется env без изменений кода.
+5. При создании плейлиста один раз устанавливается обложка `N recent`.

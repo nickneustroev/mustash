@@ -32,6 +32,7 @@ describe("LikedRecentSyncService", () => {
       .mockResolvedValueOnce(["spotify:track:a", "spotify:track:b", "spotify:track:c"])
       .mockResolvedValueOnce(["spotify:track:a", "spotify:track:b", "spotify:track:c"]);
     const replacePlaylistItems = vi.fn().mockResolvedValue(undefined);
+    const uploadPlaylistCoverImage = vi.fn().mockResolvedValue(undefined);
 
     const spotifyClient = {
       getCurrentUserId,
@@ -39,6 +40,7 @@ describe("LikedRecentSyncService", () => {
       createPlaylist,
       getRecentLikedUris,
       replacePlaylistItems,
+      uploadPlaylistCoverImage,
     } as unknown as SpotifyClient;
 
     const service = new LikedRecentSyncService(spotifyClient, log, {
@@ -57,6 +59,40 @@ describe("LikedRecentSyncService", () => {
     service.stop();
 
     expect(replacePlaylistItems).toHaveBeenCalledTimes(2);
+    expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not upload cover when playlist already exists", async () => {
+    const getCurrentUserId = vi.fn().mockResolvedValue("user-1");
+    const findPlaylistByName = vi
+      .fn()
+      .mockResolvedValueOnce({ id: "p20", name: "LIKED RECENT 20 [AUTO]" });
+    const createPlaylist = vi.fn().mockResolvedValue({ id: "unused", name: "unused" });
+    const getRecentLikedUris = vi.fn().mockResolvedValue(["spotify:track:a", "spotify:track:b"]);
+    const replacePlaylistItems = vi.fn().mockResolvedValue(undefined);
+    const uploadPlaylistCoverImage = vi.fn().mockResolvedValue(undefined);
+
+    const spotifyClient = {
+      getCurrentUserId,
+      findPlaylistByName,
+      createPlaylist,
+      getRecentLikedUris,
+      replacePlaylistItems,
+      uploadPlaylistCoverImage,
+    } as unknown as SpotifyClient;
+
+    const service = new LikedRecentSyncService(spotifyClient, log, {
+      windows: [2],
+      playlistPrefix: "LIKED RECENT",
+      playlistSuffix: "[AUTO]",
+      syncIntervalMs: 15000,
+      playlistPrivate: true,
+    });
+
+    await service.syncNow();
+
+    expect(createPlaylist).toHaveBeenCalledTimes(0);
+    expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(0);
   });
 
   it("hashes uri arrays deterministically", () => {

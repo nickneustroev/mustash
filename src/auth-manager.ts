@@ -77,6 +77,7 @@ export class AuthManager {
       "user-read-playback-state",
       "user-read-recently-played",
       "user-library-read",
+      "ugc-image-upload",
       "playlist-modify-private",
       "playlist-read-private",
     ];

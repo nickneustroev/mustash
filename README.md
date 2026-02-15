@@ -32,8 +32,9 @@
 2. `user-read-playback-state`
 3. `user-read-recently-played`
 4. `user-library-read`
-5. `playlist-modify-private`
-6. `playlist-read-private`
+5. `ugc-image-upload`
+6. `playlist-modify-private`
+7. `playlist-read-private`
 
 ## Переменные окружения
 
@@ -138,7 +139,8 @@ LIKED_RECENT_PLAYLIST_PRIVATE=true
 1. Сервис периодически читает `Liked Songs` через Spotify API.
 2. Берет последние треки и формирует окна из `LIKED_RECENT_WINDOWS`.
 3. Для каждого окна поддерживает отдельный плейлист (`LIKED RECENT {N} [AUTO]`).
-4. При добавлении или удалении из избранного плейлисты обновляются автоматически.
+4. При создании нового liked-плейлиста автоматически выставляется обложка (`N recent`).
+5. При добавлении или удалении из избранного плейлисты обновляются автоматически.
 
 ## Документация
 
