@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.spotify-tokens.json
+coverage/
+npm-debug.log*
+test/**/*.js
+test/**/*.js.map
+test/**/*.d.ts
+test/**/*.d.ts.map
