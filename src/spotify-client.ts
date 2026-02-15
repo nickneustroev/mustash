@@ -121,17 +121,36 @@ export class SpotifyClient {
   }
 
   public async replacePlaylistItems(playlistId: string, trackUris: string[]): Promise<void> {
+    const playlistUrl = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks`;
+    const head = trackUris.slice(0, 100);
+    const tail = trackUris.slice(100);
+
     await this.requestWithAuth(
-      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks`,
+      playlistUrl,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ uris: trackUris }),
+        body: JSON.stringify({ uris: head }),
       },
       true,
     );
+
+    for (let i = 0; i < tail.length; i += 100) {
+      const batch = tail.slice(i, i + 100);
+      await this.requestWithAuth(
+        playlistUrl,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ uris: batch }),
+        },
+        true,
+      );
+    }
   }
 
   public async getRecentlyPlayed(limit: number): Promise<RecentlyPlayedItem[]> {
