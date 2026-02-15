@@ -42,6 +42,13 @@ interface SpotifyRecentlyPlayedPage {
   }>;
 }
 
+interface SpotifySavedTracksPage {
+  items: Array<{
+    added_at?: string;
+    track?: SpotifyTrackItem | null;
+  }>;
+}
+
 export class SpotifyClient {
   constructor(
     private readonly auth: AuthManager,
@@ -87,7 +94,12 @@ export class SpotifyClient {
     return null;
   }
 
-  public async createPlaylist(userId: string, name: string, description: string): Promise<SpotifyPlaylist> {
+  public async createPlaylist(
+    userId: string,
+    name: string,
+    description: string,
+    isPrivate = true,
+  ): Promise<SpotifyPlaylist> {
     const response = await this.requestWithAuth(
       `https://api.spotify.com/v1/users/${encodeURIComponent(userId)}/playlists`,
       {
@@ -97,7 +109,7 @@ export class SpotifyClient {
         },
         body: JSON.stringify({
           name,
-          public: false,
+          public: !isPrivate,
           description,
         }),
       },
@@ -140,6 +152,41 @@ export class SpotifyClient {
         } satisfies RecentlyPlayedItem;
       })
       .filter((item): item is RecentlyPlayedItem => item !== null);
+  }
+
+  public async getRecentLikedUris(limit: number): Promise<string[]> {
+    const target = Math.max(0, limit);
+    if (target === 0) {
+      return [];
+    }
+
+    const uris: string[] = [];
+    let offset = 0;
+
+    while (uris.length < target) {
+      const pageLimit = Math.min(50, target - uris.length);
+      const url = `https://api.spotify.com/v1/me/tracks?limit=${pageLimit}&offset=${offset}`;
+      const response = await this.requestWithAuth(url, { method: "GET" }, true);
+      const payload = (await response.json()) as SpotifySavedTracksPage;
+
+      for (const item of payload.items) {
+        const uri = item.track?.uri ?? deriveUriFromTrackId(item.track?.id);
+        if (!uri) {
+          continue;
+        }
+        uris.push(uri);
+        if (uris.length >= target) {
+          break;
+        }
+      }
+
+      if (payload.items.length < pageLimit) {
+        break;
+      }
+      offset += pageLimit;
+    }
+
+    return uris;
   }
 
   private async requestWithAuth(url: string, init: RequestInit, allowRetryOnUnauthorized: boolean): Promise<Response> {

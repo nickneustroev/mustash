@@ -76,6 +76,7 @@ export class AuthManager {
       "user-read-currently-playing",
       "user-read-playback-state",
       "user-read-recently-played",
+      "user-library-read",
       "playlist-modify-private",
       "playlist-read-private",
     ];

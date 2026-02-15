@@ -7,6 +7,7 @@
 `Исполнитель - Название трека`
 
 2. Автоматически поддерживает плейлист `HISTORY [AUTO]` с последними 100 прослушанными треками.
+3. Опционально поддерживает набор плейлистов по последним `Liked Songs` (например 20/50/100).
 
 Текущий статус: MVP реализован.
 
@@ -30,8 +31,9 @@
 1. `user-read-currently-playing`
 2. `user-read-playback-state`
 3. `user-read-recently-played`
-4. `playlist-modify-private`
-5. `playlist-read-private`
+4. `user-library-read`
+5. `playlist-modify-private`
+6. `playlist-read-private`
 
 ## Переменные окружения
 
@@ -46,12 +48,20 @@ POLL_INTERVAL_MS=2500
 PRINT_ON_START=true
 TOKEN_STORAGE_PATH=.spotify-tokens.json
 
+HISTORY_ENABLED=false
 HISTORY_PLAYLIST_NAME=HISTORY [AUTO]
 HISTORY_MAX_ITEMS=100
 HISTORY_STATE_PATH=.history-state.json
 PLAYLIST_SYNC_DEBOUNCE_MS=7000
 BACKFILL_INTERVAL_MS=60000
 BACKFILL_LIMIT=50
+
+LIKED_RECENT_ENABLED=false
+LIKED_RECENT_WINDOWS=20,50,100
+LIKED_RECENT_PLAYLIST_PREFIX=LIKED RECENT
+LIKED_RECENT_PLAYLIST_SUFFIX=[AUTO]
+LIKED_RECENT_SYNC_INTERVAL_MS=15000
+LIKED_RECENT_PLAYLIST_PRIVATE=true
 ```
 
 Описание переменных:
@@ -62,12 +72,19 @@ BACKFILL_LIMIT=50
 4. `POLL_INTERVAL_MS` - интервал опроса API в миллисекундах.
 5. `PRINT_ON_START` - печатать текущий трек сразу при старте (`true/false`, по умолчанию `true`).
 6. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов.
-7. `HISTORY_PLAYLIST_NAME` - имя автоподдерживаемого плейлиста истории.
-8. `HISTORY_MAX_ITEMS` - размер rolling-истории (рекомендуется `100`).
-9. `HISTORY_STATE_PATH` - путь к локальному state-файлу истории.
-10. `PLAYLIST_SYNC_DEBOUNCE_MS` - debounce синхронизации плейлиста.
-11. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
-12. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
+7. `HISTORY_ENABLED` - включить/выключить функцию `HISTORY [AUTO]`.
+8. `HISTORY_PLAYLIST_NAME` - имя автоподдерживаемого плейлиста истории.
+9. `HISTORY_MAX_ITEMS` - размер rolling-истории (рекомендуется `100`).
+10. `HISTORY_STATE_PATH` - путь к локальному state-файлу истории.
+11. `PLAYLIST_SYNC_DEBOUNCE_MS` - debounce синхронизации плейлиста.
+12. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
+13. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
+14. `LIKED_RECENT_ENABLED` - включить/выключить авто-плейлисты liked-треков.
+15. `LIKED_RECENT_WINDOWS` - размеры окон через запятую (пример: `20,50,100`).
+16. `LIKED_RECENT_PLAYLIST_PREFIX` - префикс имени liked-плейлиста.
+17. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
+18. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
+19. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
 
 ## Установка и запуск
 
@@ -108,13 +125,20 @@ BACKFILL_LIMIT=50
 3. История хранится локально в файле (без БД).
 4. Нет UI, только консольный вывод.
 5. При ручном редактировании `HISTORY [AUTO]` следующая sync может перезаписать изменения.
+6. Для liked-плейлистов также применяется полная синхронизация окна.
 
 ## Как Работает HISTORY [AUTO]
 
 1. Live-события из текущего воспроизведения попадают в локальную rolling-историю.
-2. Периодический backfill из `recently played` добирает пропущенные треки.
-3. В плейлисте всегда поддерживаются последние 100 прослушиваний.
-4. Дубликаты разрешены и сохраняются.
+2. В плейлисте всегда поддерживаются последние 100 прослушиваний.
+3. Дубликаты разрешены и сохраняются.
+
+## Как Работает LIKED RECENT
+
+1. Сервис периодически читает `Liked Songs` через Spotify API.
+2. Берет последние треки и формирует окна из `LIKED_RECENT_WINDOWS`.
+3. Для каждого окна поддерживает отдельный плейлист (`LIKED RECENT {N} [AUTO]`).
+4. При добавлении или удалении из избранного плейлисты обновляются автоматически.
 
 ## Документация
 
@@ -122,3 +146,5 @@ BACKFILL_LIMIT=50
 2. План реализации: `IMPLEMENTATION_PLAN.md`
 3. Addon-дизайн плейлиста: `DESIGN_ADDON_PLAYLIST.md`
 4. План реализации плейлиста: `IMPLEMENTATION_PLAN_PLAYLIST.md`
+5. Addon-дизайн liked-плейлистов: `DESIGN_ADDON_LIKED_RECENT.md`
+6. План реализации liked-плейлистов: `IMPLEMENTATION_PLAN_LIKED_RECENT.md`

@@ -13,12 +13,19 @@ function createConfig(): AppConfig {
     printOnStart: false,
     tokenStoragePath: ".spotify-tokens.json",
     requestTimeoutMs: 5000,
+    historyEnabled: true,
     historyPlaylistName: "HISTORY [AUTO]",
     historyMaxItems: 100,
     historyStatePath: ".history-state.json",
     playlistSyncDebounceMs: 7000,
     backfillIntervalMs: 60000,
     backfillLimit: 50,
+    likedRecentEnabled: false,
+    likedRecentWindows: [20, 50, 100],
+    likedRecentPlaylistPrefix: "LIKED RECENT",
+    likedRecentPlaylistSuffix: "[AUTO]",
+    likedRecentSyncIntervalMs: 15000,
+    likedRecentPlaylistPrivate: true,
   };
 }
 
