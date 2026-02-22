@@ -104,8 +104,9 @@ export class AuthManager {
     expectedState: string,
   ): Promise<{ code: string; returnedState: string }> {
     const redirectUrl = new URL(this.cfg.spotifyRedirectUri);
-    const port = Number(redirectUrl.port || 80);
+    const port = Number(redirectUrl.port || (redirectUrl.protocol === "https:" ? 443 : 80));
     const host = redirectUrl.hostname;
+    const listenHost = isLoopbackHost(host) ? host : "0.0.0.0";
     const callbackPath = redirectUrl.pathname;
 
     return new Promise((resolve, reject) => {
@@ -145,8 +146,10 @@ export class AuthManager {
       });
 
       server.on("error", (err) => reject(err));
-      server.listen(port, host, () => {
-        this.log.info(`Waiting for OAuth callback on ${host}:${port} (${callbackPath})`);
+      server.listen(port, listenHost, () => {
+        this.log.info(
+          `Waiting for OAuth callback on ${listenHost}:${port} (${callbackPath}), redirect URI host: ${host}`,
+        );
       });
 
       setTimeout(() => {
@@ -251,6 +254,10 @@ export class AuthManager {
   private async writeTokensToDisk(tokens: OAuthTokens): Promise<void> {
     await fs.writeFile(this.cfg.tokenStoragePath, `${JSON.stringify(tokens, null, 2)}\n`, "utf-8");
   }
+}
+
+function isLoopbackHost(host: string): boolean {
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
 }
 
 function basicAuthHeader(clientId: string, clientSecret: string): string {
