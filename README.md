@@ -44,6 +44,7 @@
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/callback
+SPOTIFY_LISTEN_PORT=3000
 
 POLL_INTERVAL_MS=2500
 PRINT_ON_START=true
@@ -74,25 +75,26 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 1. `SPOTIFY_CLIENT_ID` - идентификатор приложения Spotify.
 2. `SPOTIFY_CLIENT_SECRET` - секрет приложения Spotify.
 3. `SPOTIFY_REDIRECT_URI` - callback URL, должен совпадать с настройкой в Spotify.
-4. `POLL_INTERVAL_MS` - интервал опроса API в миллисекундах.
-5. `PRINT_ON_START` - печатать текущий трек сразу при старте (`true/false`, по умолчанию `true`).
-6. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов.
-7. `HISTORY_ENABLED` - включить/выключить функцию `HISTORY [AUTO]`.
-8. `HISTORY_PLAYLIST_NAME` - имя автоподдерживаемого плейлиста истории.
-9. `HISTORY_MAX_ITEMS` - размер rolling-истории (рекомендуется `100`).
-10. `HISTORY_STATE_PATH` - путь к локальному state-файлу истории.
-11. `PLAYLIST_SYNC_DEBOUNCE_MS` - debounce синхронизации плейлиста.
-12. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
-13. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
-14. `LIKED_RECENT_ENABLED` - включить/выключить авто-плейлисты liked-треков.
-15. `LIKED_RECENT_WINDOWS` - размеры окон через запятую (пример: `20,50,100`).
-16. `LIKED_RECENT_PLAYLIST_PREFIX` - префикс имени liked-плейлиста.
-17. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
-18. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
-19. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
-20. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
-21. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
-22. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
+4. `SPOTIFY_LISTEN_PORT` - внутренний порт HTTP-сервера приложения (актуально для Docker/Coolify; обычно `3000`).
+5. `POLL_INTERVAL_MS` - интервал опроса API в миллисекундах.
+6. `PRINT_ON_START` - печатать текущий трек сразу при старте (`true/false`, по умолчанию `true`).
+7. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов.
+8. `HISTORY_ENABLED` - включить/выключить функцию `HISTORY [AUTO]`.
+9. `HISTORY_PLAYLIST_NAME` - имя автоподдерживаемого плейлиста истории.
+10. `HISTORY_MAX_ITEMS` - размер rolling-истории (рекомендуется `100`).
+11. `HISTORY_STATE_PATH` - путь к локальному state-файлу истории.
+12. `PLAYLIST_SYNC_DEBOUNCE_MS` - debounce синхронизации плейлиста.
+13. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
+14. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
+15. `LIKED_RECENT_ENABLED` - включить/выключить авто-плейлисты liked-треков.
+16. `LIKED_RECENT_WINDOWS` - размеры окон через запятую (пример: `20,50,100`).
+17. `LIKED_RECENT_PLAYLIST_PREFIX` - префикс имени liked-плейлиста.
+18. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
+19. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
+20. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
+21. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
+22. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
+23. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
 
 ## Установка и запуск
 

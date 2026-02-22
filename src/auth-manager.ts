@@ -112,7 +112,7 @@ export class AuthManager {
     authorizeUrl: string,
   ): Promise<{ code: string; returnedState: string }> {
     const redirectUrl = new URL(this.cfg.spotifyRedirectUri);
-    const port = Number(redirectUrl.port || (redirectUrl.protocol === "https:" ? 443 : 80));
+    const port = resolveListenPort(redirectUrl);
     const host = redirectUrl.hostname;
     const listenHost = isLoopbackHost(host) ? host : "0.0.0.0";
     const callbackPath = redirectUrl.pathname;
@@ -272,6 +272,17 @@ export class AuthManager {
 
 function isLoopbackHost(host: string): boolean {
   return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
+
+function resolveListenPort(redirectUrl: URL): number {
+  const fromEnv = process.env.SPOTIFY_LISTEN_PORT ?? process.env.PORT;
+  if (fromEnv) {
+    const parsed = Number(fromEnv);
+    if (Number.isInteger(parsed) && parsed > 0 && parsed <= 65535) {
+      return parsed;
+    }
+  }
+  return Number(redirectUrl.port || (redirectUrl.protocol === "https:" ? 443 : 80));
 }
 
 function basicAuthHeader(clientId: string, clientSecret: string): string {
