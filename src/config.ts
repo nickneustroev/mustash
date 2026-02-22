@@ -40,6 +40,17 @@ const schema = z.object({
     .optional()
     .transform((v) => v !== "false")
     .default(true),
+  SPOTIFY_PROXY_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+    .default(false),
+  SPOTIFY_PROXY_URL: z.string().default(""),
+  SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY: z
+    .string()
+    .optional()
+    .transform((v) => v !== "false")
+    .default(true),
 });
 
 export interface AppConfig {
@@ -63,6 +74,9 @@ export interface AppConfig {
   likedRecentPlaylistSuffix: string;
   likedRecentSyncIntervalMs: number;
   likedRecentPlaylistPrivate: boolean;
+  spotifyProxyEnabled: boolean;
+  spotifyProxyUrl: string;
+  spotifyProxyOnGeoBlockOnly: boolean;
 }
 
 export function loadConfig(): AppConfig {
@@ -99,6 +113,9 @@ export function loadConfig(): AppConfig {
     likedRecentPlaylistSuffix: env.LIKED_RECENT_PLAYLIST_SUFFIX,
     likedRecentSyncIntervalMs: env.LIKED_RECENT_SYNC_INTERVAL_MS,
     likedRecentPlaylistPrivate: env.LIKED_RECENT_PLAYLIST_PRIVATE,
+    spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
+    spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
+    spotifyProxyOnGeoBlockOnly: env.SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY,
   };
 }
 
@@ -123,6 +140,9 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     likedRecentPlaylistSuffix: cfg.likedRecentPlaylistSuffix,
     likedRecentSyncIntervalMs: cfg.likedRecentSyncIntervalMs,
     likedRecentPlaylistPrivate: cfg.likedRecentPlaylistPrivate,
+    spotifyProxyEnabled: cfg.spotifyProxyEnabled,
+    spotifyProxyConfigured: cfg.spotifyProxyUrl.length > 0,
+    spotifyProxyOnGeoBlockOnly: cfg.spotifyProxyOnGeoBlockOnly,
   };
 }
 

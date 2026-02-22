@@ -2,6 +2,7 @@ import type { AuthManager } from "./auth-manager.js";
 import type { AppConfig } from "./config.js";
 import { SpotifyRateLimitError } from "./errors.js";
 import type { Logger, PlaybackSnapshot, RecentlyPlayedItem } from "./types.js";
+import { ProxyAgent } from "undici";
 
 interface SpotifyArtist {
   name?: string;
@@ -49,13 +50,21 @@ interface SpotifySavedTracksPage {
   }>;
 }
 
+type TransportMode = "direct" | "proxy";
+
 export class SpotifyClient {
+  private readonly proxyDispatcher: unknown | null;
+  private transportMode: TransportMode;
+
   constructor(
     private readonly auth: AuthManager,
     private readonly cfg: AppConfig,
     private readonly log: Logger,
     private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+  ) {
+    this.proxyDispatcher = cfg.spotifyProxyUrl ? new ProxyAgent(cfg.spotifyProxyUrl) : null;
+    this.transportMode = this.shouldStartWithProxy() ? "proxy" : "direct";
+  }
 
   public async getCurrentlyPlaying(): Promise<PlaybackSnapshot | null> {
     const response = await this.requestWithAuth(
@@ -227,11 +236,7 @@ export class SpotifyClient {
     const headers = new Headers(init.headers ?? {});
     headers.set("Authorization", `Bearer ${accessToken}`);
 
-    const response = await this.fetchImpl(url, {
-      ...init,
-      headers,
-      signal: AbortSignal.timeout(this.cfg.requestTimeoutMs),
-    });
+    const response = await this.fetchWithTransport(url, init, headers, this.transportMode);
 
     if (response.status === 401 && allowRetryOnUnauthorized) {
       this.log.warn("Spotify API returned 401, refreshing token and retrying once.");
@@ -247,10 +252,54 @@ export class SpotifyClient {
 
     if (!response.ok) {
       const payload = await response.text();
+
+      if (this.shouldRetryWithProxy(response.status, payload)) {
+        this.transportMode = "proxy";
+        this.log.warn("Spotify API geo-block detected (403). Retrying request via configured proxy.");
+        return this.requestWithAuth(url, init, allowRetryOnUnauthorized);
+      }
+
+      if (isSpotifyGeoBlock(response.status, payload) && !this.canUseProxy()) {
+        this.log.warn(
+          "Spotify geo-block detected but proxy is not configured. Set SPOTIFY_PROXY_ENABLED=true and SPOTIFY_PROXY_URL=http://user:pass@host:port.",
+        );
+      }
+
       throw new Error(`Spotify request failed (${response.status}): ${payload}`);
     }
 
     return response;
+  }
+
+  private async fetchWithTransport(
+    url: string,
+    init: RequestInit,
+    headers: Headers,
+    mode: TransportMode,
+  ): Promise<Response> {
+    const requestInit: RequestInit = {
+      ...init,
+      headers,
+      signal: AbortSignal.timeout(this.cfg.requestTimeoutMs),
+    };
+
+    if (mode === "proxy" && this.proxyDispatcher) {
+      (requestInit as { dispatcher?: unknown }).dispatcher = this.proxyDispatcher;
+    }
+
+    return this.fetchImpl(url, requestInit);
+  }
+
+  private shouldStartWithProxy(): boolean {
+    return this.canUseProxy() && !this.cfg.spotifyProxyOnGeoBlockOnly;
+  }
+
+  private canUseProxy(): boolean {
+    return this.cfg.spotifyProxyEnabled && Boolean(this.proxyDispatcher);
+  }
+
+  private shouldRetryWithProxy(status: number, payload: string): boolean {
+    return this.transportMode === "direct" && this.canUseProxy() && isSpotifyGeoBlock(status, payload);
   }
 }
 
@@ -285,4 +334,25 @@ function toItemType(type: string): PlaybackSnapshot["itemType"] {
 
 function deriveUriFromTrackId(trackId: string | undefined): string | null {
   return trackId ? `spotify:track:${trackId}` : null;
+}
+
+function isSpotifyGeoBlock(status: number, payload: string): boolean {
+  if (status !== 403) {
+    return false;
+  }
+
+  if (payload.toLowerCase().includes("spotify is unavailable in this country")) {
+    return true;
+  }
+
+  try {
+    const parsed = JSON.parse(payload) as {
+      error?: {
+        message?: string;
+      };
+    };
+    return parsed.error?.message?.toLowerCase().includes("spotify is unavailable in this country") ?? false;
+  } catch {
+    return false;
+  }
 }

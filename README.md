@@ -63,6 +63,10 @@ LIKED_RECENT_PLAYLIST_PREFIX=LIKED RECENT
 LIKED_RECENT_PLAYLIST_SUFFIX=[AUTO]
 LIKED_RECENT_SYNC_INTERVAL_MS=15000
 LIKED_RECENT_PLAYLIST_PRIVATE=true
+
+SPOTIFY_PROXY_ENABLED=false
+SPOTIFY_PROXY_URL=
+SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 ```
 
 Описание переменных:
@@ -86,6 +90,9 @@ LIKED_RECENT_PLAYLIST_PRIVATE=true
 17. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
 18. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
 19. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
+20. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
+21. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
+22. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
 
 ## Установка и запуск
 

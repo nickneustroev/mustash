@@ -26,6 +26,9 @@ function createConfig(): AppConfig {
     likedRecentPlaylistSuffix: "[AUTO]",
     likedRecentSyncIntervalMs: 15000,
     likedRecentPlaylistPrivate: true,
+    spotifyProxyEnabled: false,
+    spotifyProxyUrl: "",
+    spotifyProxyOnGeoBlockOnly: true,
   };
 }
 
