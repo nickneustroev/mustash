@@ -81,16 +81,23 @@ export class AuthManager {
       "playlist-modify-private",
       "playlist-read-private",
     ];
-    const callbackPromise = this.waitForAuthCode(state);
     const authorizeUrl = new URL("https://accounts.spotify.com/authorize");
     authorizeUrl.searchParams.set("response_type", "code");
     authorizeUrl.searchParams.set("client_id", this.cfg.spotifyClientId);
     authorizeUrl.searchParams.set("redirect_uri", this.cfg.spotifyRedirectUri);
     authorizeUrl.searchParams.set("scope", scopes.join(" "));
     authorizeUrl.searchParams.set("state", state);
+    const callbackPromise = this.waitForAuthCode(state, authorizeUrl.toString());
 
-    this.log.info("Opening Spotify authorization in browser.");
-    openBrowser(authorizeUrl.toString());
+    const redirectHost = new URL(this.cfg.spotifyRedirectUri).hostname;
+    if (isLoopbackHost(redirectHost)) {
+      this.log.info("Opening Spotify authorization in browser.");
+      openBrowser(authorizeUrl.toString());
+    } else {
+      this.log.info(
+        `Open ${new URL("/", this.cfg.spotifyRedirectUri).toString()} to start Spotify authorization.`,
+      );
+    }
     const { code, returnedState } = await callbackPromise;
 
     if (returnedState !== state) {
@@ -102,6 +109,7 @@ export class AuthManager {
 
   private async waitForAuthCode(
     expectedState: string,
+    authorizeUrl: string,
   ): Promise<{ code: string; returnedState: string }> {
     const redirectUrl = new URL(this.cfg.spotifyRedirectUri);
     const port = Number(redirectUrl.port || (redirectUrl.protocol === "https:" ? 443 : 80));
@@ -112,10 +120,15 @@ export class AuthManager {
     return new Promise((resolve, reject) => {
       const server = http.createServer((req, res) => {
         const reqUrl = req.url ? new URL(req.url, this.cfg.spotifyRedirectUri) : null;
+        if (reqUrl?.pathname === "/") {
+          res.writeHead(302, { Location: authorizeUrl });
+          res.end();
+          return;
+        }
         const isExpectedPath = reqUrl?.pathname === callbackPath;
         if (!isExpectedPath) {
           res.writeHead(404);
-          res.end("Not found.");
+          res.end("Not found. Open / to start Spotify authorization.");
           return;
         }
 
@@ -150,6 +163,7 @@ export class AuthManager {
         this.log.info(
           `Waiting for OAuth callback on ${listenHost}:${port} (${callbackPath}), redirect URI host: ${host}`,
         );
+        this.log.info(`Authorization entrypoint: ${new URL("/", this.cfg.spotifyRedirectUri)}`);
       });
 
       setTimeout(() => {
