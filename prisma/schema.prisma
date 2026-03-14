@@ -42,3 +42,16 @@ model SavedTrack {
 
     @@index([trackId])
 }
+
+model ArchivedTrack {
+    trackId          String   @id
+    trackUri         String
+    trackName        String?
+    artistName       String?
+    addedAtEpochMs   BigInt
+    removedAtEpochMs BigInt
+    createdAt        DateTime @default(now())
+
+    @@index([trackId])
+    @@index([removedAtEpochMs(sort: Desc)])
+}

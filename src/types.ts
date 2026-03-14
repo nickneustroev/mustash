@@ -47,3 +47,12 @@ export interface SavedTrackItem {
   artistName: string | null;
   addedAtEpochMs: number;
 }
+
+export interface ArchivedTrackItem {
+  trackId: string;
+  trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
+  addedAtEpochMs: number;
+  removedAtEpochMs: number;
+}

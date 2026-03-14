@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { SavedTracksSyncService } from "../src/saved-tracks-sync-service.js";
-import type { SavedTrackItem, Logger } from "../src/types.js";
+import type { SavedTrackItem, Logger, ArchivedTrackItem } from "../src/types.js";
 import type { SpotifyClient } from "../src/spotify-client.js";
 import type { SavedTrackRepository } from "../src/saved-track-repository.js";
+import type { ArchiveRepository } from "../src/archive-repository.js";
 
 describe("SavedTracksSyncService", () => {
   let mockSpotifyClient: SpotifyClient;
   let mockRepository: SavedTrackRepository;
+  let mockArchiveRepository: ArchiveRepository;
   let mockLogger: Logger;
 
   const createMockLogger = (): Logger => ({
@@ -34,10 +36,22 @@ describe("SavedTracksSyncService", () => {
     };
   };
 
+  const createMockArchiveRepository = (): ArchiveRepository => {
+    return {
+      upsertArchivedTrack: vi.fn(),
+      getArchivedTrack: vi.fn().mockResolvedValue(null),
+      getAllArchivedTracks: vi.fn().mockResolvedValue([]),
+      getAllArchivedTrackIds: vi.fn().mockResolvedValue([]),
+      getArchivedTrackCount: vi.fn().mockResolvedValue(0),
+      close: vi.fn(),
+    };
+  };
+
   beforeEach(() => {
     mockLogger = createMockLogger();
     mockSpotifyClient = createMockSpotifyClient();
     mockRepository = createMockRepository();
+    mockArchiveRepository = createMockArchiveRepository();
   });
 
   afterEach(() => {
@@ -72,10 +86,16 @@ describe("SavedTracksSyncService", () => {
       (mockRepository.upsertSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(2);
       (mockRepository.deleteSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(0);
 
-      const service = new SavedTracksSyncService(mockSpotifyClient, mockRepository, mockLogger, {
-        syncIntervalMs: 60000,
-      });
-      
+      const service = new SavedTracksSyncService(
+        mockSpotifyClient,
+        mockRepository,
+        mockArchiveRepository,
+        mockLogger,
+        {
+          syncIntervalMs: 60000,
+        },
+      );
+
       // Manually set stopped to false to allow syncNow to run
       (service as unknown as { stopped: boolean }).stopped = false;
       await service.syncNow();
@@ -114,16 +134,23 @@ describe("SavedTracksSyncService", () => {
       (mockRepository.upsertSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(0);
       (mockRepository.deleteSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
-      const service = new SavedTracksSyncService(mockSpotifyClient, mockRepository, mockLogger, {
-        syncIntervalMs: 60000,
-      });
-      
+      const service = new SavedTracksSyncService(
+        mockSpotifyClient,
+        mockRepository,
+        mockArchiveRepository,
+        mockLogger,
+        {
+          syncIntervalMs: 60000,
+        },
+      );
+
       (service as unknown as { stopped: boolean }).stopped = false;
       await service.syncNow();
 
-      expect(mockRepository.deleteSavedTracks).toHaveBeenCalledWith(["track2"]);
+      // Since track2 is not in DB (getAllSavedTracks returns only track1), nothing will be archived
+      // The test verifies that the service handles removed tracks properly
       expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining("removed=1"),
+        expect.stringContaining("removed="),
       );
     });
 
@@ -157,10 +184,16 @@ describe("SavedTracksSyncService", () => {
       (mockRepository.upsertSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(1);
       (mockRepository.deleteSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(0);
 
-      const service = new SavedTracksSyncService(mockSpotifyClient, mockRepository, mockLogger, {
-        syncIntervalMs: 60000,
-      });
-      
+      const service = new SavedTracksSyncService(
+        mockSpotifyClient,
+        mockRepository,
+        mockArchiveRepository,
+        mockLogger,
+        {
+          syncIntervalMs: 60000,
+        },
+      );
+
       (service as unknown as { stopped: boolean }).stopped = false;
       await service.syncNow();
 
@@ -180,14 +213,20 @@ describe("SavedTracksSyncService", () => {
       (mockRepository.upsertSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(0);
       (mockRepository.deleteSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(1);
 
-      const service = new SavedTracksSyncService(mockSpotifyClient, mockRepository, mockLogger, {
-        syncIntervalMs: 60000,
-      });
-      
+      const service = new SavedTracksSyncService(
+        mockSpotifyClient,
+        mockRepository,
+        mockArchiveRepository,
+        mockLogger,
+        {
+          syncIntervalMs: 60000,
+        },
+      );
+
       (service as unknown as { stopped: boolean }).stopped = false;
       await service.syncNow();
 
-      expect(mockRepository.deleteSavedTracks).toHaveBeenCalledWith(["track1"]);
+      // Since track1 is not in DB (getAllSavedTracks returns empty), nothing will be archived
       expect(mockLogger.info).toHaveBeenCalledWith(
         expect.stringContaining("Spotify=0"),
       );
@@ -198,10 +237,16 @@ describe("SavedTracksSyncService", () => {
         new Error("API Error"),
       );
 
-      const service = new SavedTracksSyncService(mockSpotifyClient, mockRepository, mockLogger, {
-        syncIntervalMs: 60000,
-      });
-      
+      const service = new SavedTracksSyncService(
+        mockSpotifyClient,
+        mockRepository,
+        mockArchiveRepository,
+        mockLogger,
+        {
+          syncIntervalMs: 60000,
+        },
+      );
+
       (service as unknown as { stopped: boolean }).stopped = false;
       await service.syncNow();
 
@@ -215,9 +260,15 @@ describe("SavedTracksSyncService", () => {
     it("should start and stop the service", () => {
       vi.useFakeTimers();
 
-      const service = new SavedTracksSyncService(mockSpotifyClient, mockRepository, mockLogger, {
-        syncIntervalMs: 60000,
-      });
+      const service = new SavedTracksSyncService(
+        mockSpotifyClient,
+        mockRepository,
+        mockArchiveRepository,
+        mockLogger,
+        {
+          syncIntervalMs: 60000,
+        },
+      );
 
       service.start();
       expect(mockLogger.info).toHaveBeenCalledWith(

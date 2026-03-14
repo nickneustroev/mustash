@@ -1,7 +1,8 @@
 import { SpotifyRateLimitError } from "./errors.js";
-import type { Logger, SavedTrackItem } from "./types.js";
+import type { Logger, SavedTrackItem, ArchivedTrackItem } from "./types.js";
 import type { SpotifyClient } from "./spotify-client.js";
 import type { SavedTrackRepository } from "./saved-track-repository.js";
+import type { ArchiveRepository } from "./archive-repository.js";
 
 export interface SavedTracksSyncOptions {
   syncIntervalMs: number;
@@ -15,6 +16,7 @@ export class SavedTracksSyncService {
   constructor(
     private readonly spotifyClient: SpotifyClient,
     private readonly repository: SavedTrackRepository,
+    private readonly archiveRepository: ArchiveRepository,
     private readonly logger: Logger,
     private readonly options: SavedTracksSyncOptions,
   ) {}
@@ -108,7 +110,7 @@ export class SavedTracksSyncService {
       }
 
       if (removedTrackIds.length > 0) {
-        removedCount = await this.repository.deleteSavedTracks(removedTrackIds);
+        removedCount = await this.archiveAndDeleteTracks(removedTrackIds, dbTracksMap);
       }
 
       this.logger.info(
@@ -125,5 +127,49 @@ export class SavedTracksSyncService {
     } finally {
       this.running = false;
     }
+  }
+
+  private async archiveAndDeleteTracks(
+    removedTrackIds: string[],
+    dbTracksMap: Map<string, SavedTrackItem>,
+  ): Promise<number> {
+    let removedCount = 0;
+    const now = Date.now();
+
+    for (const trackId of removedTrackIds) {
+      try {
+        // Check if already in archive
+        const existingArchive = await this.archiveRepository.getArchivedTrack(trackId);
+        if (existingArchive) {
+          // Already archived, just delete from saved
+          await this.repository.deleteSavedTrack(trackId);
+          removedCount += 1;
+          continue;
+        }
+
+        // Get track info from DB before deleting
+        const track = dbTracksMap.get(trackId);
+        if (track) {
+          // Archive the track
+          const archivedTrack: ArchivedTrackItem = {
+            trackId: track.trackId,
+            trackUri: track.trackUri,
+            trackName: track.trackName,
+            artistName: track.artistName,
+            addedAtEpochMs: track.addedAtEpochMs,
+            removedAtEpochMs: now,
+          };
+          await this.archiveRepository.upsertArchivedTrack(archivedTrack);
+        }
+
+        // Delete from saved tracks
+        await this.repository.deleteSavedTrack(trackId);
+        removedCount += 1;
+      } catch (error) {
+        this.logger.warn(`Failed to archive/delete track ${trackId}: ${(error as Error).message}`);
+      }
+    }
+
+    return removedCount;
   }
 }

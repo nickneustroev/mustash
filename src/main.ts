@@ -8,6 +8,7 @@ import { TrackWatcher } from "./track-watcher.js";
 import { BackfillService } from "./backfill-service.js";
 import { createPrismaClient, PrismaHistoryRepository } from "./history-repository.js";
 import { createPrismaClient as createSavedTrackPrismaClient, PrismaSavedTrackRepository } from "./saved-track-repository.js";
+import { PrismaArchiveRepository } from "./archive-repository.js";
 import { SavedTracksSyncService } from "./saved-tracks-sync-service.js";
 
 async function main(): Promise<void> {
@@ -62,9 +63,14 @@ async function main(): Promise<void> {
       ? new PrismaSavedTrackRepository(createSavedTrackPrismaClient(cfg.databaseUrl), logger)
       : null;
 
+  const archiveRepository =
+    cfg.savedTracksEnabled
+      ? new PrismaArchiveRepository(createSavedTrackPrismaClient(cfg.databaseUrl), logger)
+      : null;
+
   const savedTracksSyncService =
-    cfg.savedTracksEnabled && savedTracksRepository
-      ? new SavedTracksSyncService(spotifyClient, savedTracksRepository, logger, {
+    cfg.savedTracksEnabled && savedTracksRepository && archiveRepository
+      ? new SavedTracksSyncService(spotifyClient, savedTracksRepository, archiveRepository, logger, {
           syncIntervalMs: cfg.savedTracksSyncIntervalMs,
         })
       : null;
@@ -85,6 +91,7 @@ async function main(): Promise<void> {
     backfillService.stop();
     await historyRepository.close();
     await savedTracksRepository?.close();
+    await archiveRepository?.close();
     process.exit(0);
   };
 
