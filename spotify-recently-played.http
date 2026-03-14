@@ -1,0 +1,26 @@
+### Spotify Recently Played API tests
+@baseUrl = https://api.spotify.com/v1
+@accessToken = BQAnTXhbP_KzaHIbXEmbIL54UNTxCjsxuXDaE2fLKbb_yM_sof0iD-I7hRVIaZ4RwEfH0OjX4MNDt-GeaBDj5-cNwHG7I7U07wkwsvIM_krPi2P0C5zQD_MA2VDBkQRtVbQoqzf7t2Ii6gugf6iNQ3NHfRXbV26_ueGlsG-tpW7R0aJBu-zUuPy8jlE7l0qv6xwbwQ5UyrN73cHPNJ-wohH3863Snvyh9V_wIpAMDt3sO8q19wLfnHRg_jbaotNvPY02I1mZz3BdrrrUttmHF08hpZcZ4nuaYbfqV-kEzi-qryJGiEhS7E6xAi0
+@limit = 10
+@before = 1773238398706
+@after = 1773419503440
+
+### 1) Last 50 recently played
+GET {{baseUrl}}/me/player/recently-played?limit={{limit}}
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### 2) Recently played before cursor (epoch ms)
+GET {{baseUrl}}/me/player/recently-played?limit={{limit}}&before={{before}}
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### 3) Recently played after cursor (epoch ms)
+GET {{baseUrl}}/me/player/recently-played?limit={{limit}}&after={{after}}
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+### 4) Token sanity check
+GET {{baseUrl}}/me
+Authorization: Bearer {{accessToken}}
+Accept: application/json

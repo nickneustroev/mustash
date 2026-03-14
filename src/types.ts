@@ -27,11 +27,15 @@ export type HistorySource = "live" | "backfill";
 
 export interface HistoryEntry {
   trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
   playedAtEpochMs: number;
   source: HistorySource;
 }
 
 export interface RecentlyPlayedItem {
   trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
   playedAtEpochMs: number;
 }

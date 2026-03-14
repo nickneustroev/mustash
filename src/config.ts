@@ -15,15 +15,7 @@ const schema = z.object({
     .transform((v) => v === "true")
     .default(true),
   TOKEN_STORAGE_PATH: z.string().default(".spotify-tokens.json"),
-  HISTORY_ENABLED: z
-    .string()
-    .optional()
-    .transform((v) => v !== "false")
-    .default(false),
-  HISTORY_PLAYLIST_NAME: z.string().min(1).default("HISTORY [AUTO]"),
-  HISTORY_MAX_ITEMS: z.coerce.number().int().min(1).max(100).default(100),
-  HISTORY_STATE_PATH: z.string().default(".history-state.json"),
-  PLAYLIST_SYNC_DEBOUNCE_MS: z.coerce.number().int().min(500).default(7000),
+  DATABASE_URL: z.string().min(1).default("file:./dev.db"),
   BACKFILL_INTERVAL_MS: z.coerce.number().int().min(5000).default(60000),
   BACKFILL_LIMIT: z.coerce.number().int().min(1).max(50).default(50),
   LIKED_RECENT_ENABLED: z
@@ -60,12 +52,8 @@ export interface AppConfig {
   pollIntervalMs: number;
   printOnStart: boolean;
   tokenStoragePath: string;
+  databaseUrl: string;
   requestTimeoutMs: number;
-  historyEnabled: boolean;
-  historyPlaylistName: string;
-  historyMaxItems: number;
-  historyStatePath: string;
-  playlistSyncDebounceMs: number;
   backfillIntervalMs: number;
   backfillLimit: number;
   likedRecentEnabled: boolean;
@@ -99,12 +87,8 @@ export function loadConfig(): AppConfig {
     pollIntervalMs: env.POLL_INTERVAL_MS,
     printOnStart: env.PRINT_ON_START,
     tokenStoragePath: path.resolve(process.cwd(), env.TOKEN_STORAGE_PATH),
+    databaseUrl: env.DATABASE_URL,
     requestTimeoutMs: 5000,
-    historyEnabled: env.HISTORY_ENABLED,
-    historyPlaylistName: env.HISTORY_PLAYLIST_NAME,
-    historyMaxItems: env.HISTORY_MAX_ITEMS,
-    historyStatePath: path.resolve(process.cwd(), env.HISTORY_STATE_PATH),
-    playlistSyncDebounceMs: env.PLAYLIST_SYNC_DEBOUNCE_MS,
     backfillIntervalMs: env.BACKFILL_INTERVAL_MS,
     backfillLimit: env.BACKFILL_LIMIT,
     likedRecentEnabled: env.LIKED_RECENT_ENABLED,
@@ -126,12 +110,8 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     pollIntervalMs: cfg.pollIntervalMs,
     printOnStart: cfg.printOnStart,
     tokenStoragePath: cfg.tokenStoragePath,
+    databaseUrl: cfg.databaseUrl,
     requestTimeoutMs: cfg.requestTimeoutMs,
-    historyEnabled: cfg.historyEnabled,
-    historyPlaylistName: cfg.historyPlaylistName,
-    historyMaxItems: cfg.historyMaxItems,
-    historyStatePath: cfg.historyStatePath,
-    playlistSyncDebounceMs: cfg.playlistSyncDebounceMs,
     backfillIntervalMs: cfg.backfillIntervalMs,
     backfillLimit: cfg.backfillLimit,
     likedRecentEnabled: cfg.likedRecentEnabled,

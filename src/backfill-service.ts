@@ -1,8 +1,7 @@
 import { SpotifyRateLimitError } from "./errors.js";
 import type { Logger } from "./types.js";
 import type { SpotifyClient } from "./spotify-client.js";
-import type { HistoryStore } from "./history-store.js";
-import type { PlaylistSyncScheduler } from "./playlist-sync-scheduler.js";
+import type { HistoryRepository } from "./history-repository.js";
 
 interface BackfillOptions {
   intervalMs: number;
@@ -16,8 +15,7 @@ export class BackfillService {
 
   constructor(
     private readonly spotifyClient: SpotifyClient,
-    private readonly historyStore: HistoryStore,
-    private readonly syncScheduler: PlaylistSyncScheduler,
+    private readonly historyRepository: HistoryRepository,
     private readonly logger: Logger,
     private readonly options: BackfillOptions,
   ) {}
@@ -50,13 +48,11 @@ export class BackfillService {
 
     try {
       const recentlyPlayed = await this.spotifyClient.getRecentlyPlayed(this.options.limit);
-      const changed = this.historyStore.addBackfillItems(recentlyPlayed);
-      if (!changed) {
+      const inserted = await this.historyRepository.addBackfillItems(recentlyPlayed);
+      if (inserted === 0) {
         return;
       }
-      await this.historyStore.save();
-      this.syncScheduler.markDirty();
-      this.logger.info(`Backfill added ${recentlyPlayed.length} candidate items.`);
+      this.logger.info(`Backfill inserted ${inserted} new items from ${recentlyPlayed.length} candidates.`);
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
         this.logger.warn(

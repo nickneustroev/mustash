@@ -1,0 +1,33 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+}
+
+enum PlayEventSource {
+    LIVE
+    BACKFILL
+}
+
+model PlayEvent {
+    id                String          @id @default(cuid())
+    trackUri          String
+    trackName         String?
+    artistName        String?
+    playedAtEpochMs   BigInt
+    source            PlayEventSource
+    observedAtEpochMs BigInt
+    createdAt         DateTime        @default(now())
+
+    @@unique([trackUri, playedAtEpochMs, source])
+    @@index([playedAtEpochMs(sort: Desc)])
+    @@index([trackUri, playedAtEpochMs])
+}
+
+model AppState {
+    key       String   @id
+    value     String
+    updatedAt DateTime @updatedAt
+}

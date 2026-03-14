@@ -6,7 +6,7 @@
 
 `Исполнитель - Название трека`
 
-2. Автоматически поддерживает плейлист `HISTORY [AUTO]` с последними 100 прослушанными треками.
+2. Сохраняет полную историю прослушиваний в SQLite через Prisma.
 3. Опционально поддерживает набор плейлистов по последним `Liked Songs` (например 20/50/100).
 
 Текущий статус: MVP реализован.
@@ -50,11 +50,7 @@ POLL_INTERVAL_MS=2500
 PRINT_ON_START=true
 TOKEN_STORAGE_PATH=.spotify-tokens.json
 
-HISTORY_ENABLED=false
-HISTORY_PLAYLIST_NAME=HISTORY [AUTO]
-HISTORY_MAX_ITEMS=100
-HISTORY_STATE_PATH=.history-state.json
-PLAYLIST_SYNC_DEBOUNCE_MS=7000
+DATABASE_URL=file:/data/history.db
 BACKFILL_INTERVAL_MS=60000
 BACKFILL_LIMIT=50
 
@@ -79,31 +75,45 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 5. `POLL_INTERVAL_MS` - интервал опроса API в миллисекундах.
 6. `PRINT_ON_START` - печатать текущий трек сразу при старте (`true/false`, по умолчанию `true`).
 7. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов.
-8. `HISTORY_ENABLED` - включить/выключить функцию `HISTORY [AUTO]`.
-9. `HISTORY_PLAYLIST_NAME` - имя автоподдерживаемого плейлиста истории.
-10. `HISTORY_MAX_ITEMS` - размер rolling-истории (рекомендуется `100`).
-11. `HISTORY_STATE_PATH` - путь к локальному state-файлу истории.
-12. `PLAYLIST_SYNC_DEBOUNCE_MS` - debounce синхронизации плейлиста.
-13. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
-14. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
-15. `LIKED_RECENT_ENABLED` - включить/выключить авто-плейлисты liked-треков.
-16. `LIKED_RECENT_WINDOWS` - размеры окон через запятую (пример: `20,50,100`).
-17. `LIKED_RECENT_PLAYLIST_PREFIX` - префикс имени liked-плейлиста.
-18. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
-19. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
-20. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
-21. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
-22. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
-23. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
+8. `DATABASE_URL` - путь к SQLite-базе для полной истории (пример: `file:/data/history.db`).
+9. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
+10. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
+11. `LIKED_RECENT_ENABLED` - включить/выключить авто-плейлисты liked-треков.
+12. `LIKED_RECENT_WINDOWS` - размеры окон через запятую (пример: `20,50,100`).
+13. `LIKED_RECENT_PLAYLIST_PREFIX` - префикс имени liked-плейлиста.
+14. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
+15. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
+16. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
+17. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
+18. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
+19. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
 
 ## Установка и запуск
 
+### Локальный запуск (рекомендуется)
+
 1. Установить зависимости:
 `npm install`
-2. Запустить приложение:
+
+2. Сгенерировать Prisma Client:
+`npm run prisma:generate`
+
+3. Применить миграции для локальной БД:
+`npm run prisma:migrate:dev`
+
+4. Убедиться, что в `.env` для локальной разработки задана БД, например:
+`DATABASE_URL=file:./dev.db`
+
+5. Запустить приложение:
 `npm run dev`
-3. Запуск production-сборки:
-`npm run build && npm run start`
+
+### Production-запуск
+
+1. Сборка:
+`npm run build`
+
+2. Запуск:
+`npm run start`
 
 Ожидаемое поведение:
 
@@ -111,8 +121,8 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 2. После успешного входа приложение начнет отслеживание.
 3. При смене трека в консоли появится строка вида:
 `Artist - Track`
-4. Плейлист `HISTORY [AUTO]` будет создан автоматически (если его нет).
-5. Плейлист будет обновляться по rolling-окну последних 100 прослушиваний.
+4. Все события прослушивания сохраняются в SQLite-базу.
+5. Backfill периодически добирает пропущенные события из recently played.
 
 ## Команды
 
@@ -121,6 +131,9 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 3. `npm run start` - запуск собранного приложения.
 4. `npm test` - запуск unit-тестов.
 5. `npm run lint` - проверка линтером.
+6. `npm run prisma:generate` - генерация Prisma Client.
+7. `npm run prisma:migrate:dev` - запуск dev-миграций Prisma.
+8. `npm run prisma:studio` - запуск Prisma Studio на порту `5555`.
 
 ## Примечания по безопасности
 
@@ -132,16 +145,9 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 
 1. Нет webhook-событий, используется polling.
 2. Нет поддержки нескольких пользователей.
-3. История хранится локально в файле (без БД).
-4. Нет UI, только консольный вывод.
-5. При ручном редактировании `HISTORY [AUTO]` следующая sync может перезаписать изменения.
-6. Для liked-плейлистов также применяется полная синхронизация окна.
-
-## Как Работает HISTORY [AUTO]
-
-1. Live-события из текущего воспроизведения попадают в локальную rolling-историю.
-2. В плейлисте всегда поддерживаются последние 100 прослушиваний.
-3. Дубликаты разрешены и сохраняются.
+3. История хранится локально в SQLite (без отдельного серверного DBMS).
+4. Нет UI, только консольный вывод и Prisma Studio для админ-доступа к данным.
+5. Для liked-плейлистов применяется полная синхронизация окна.
 
 ## Как Работает LIKED RECENT
 

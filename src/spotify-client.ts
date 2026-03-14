@@ -177,7 +177,8 @@ export class SpotifyClient {
   }
 
   public async getRecentlyPlayed(limit: number): Promise<RecentlyPlayedItem[]> {
-    const url = `https://api.spotify.com/v1/me/player/recently-played?limit=${encodeURIComponent(String(limit))}`;
+    const beforeEpochMs = Date.now();
+    const url = `https://api.spotify.com/v1/me/player/recently-played?limit=${encodeURIComponent(String(limit))}&before=${encodeURIComponent(String(beforeEpochMs))}`;
     const response = await this.requestWithAuth(url, { method: "GET" }, true);
     const payload = (await response.json()) as SpotifyRecentlyPlayedPage;
 
@@ -190,6 +191,8 @@ export class SpotifyClient {
         }
         return {
           trackUri: uri,
+          trackName: item.track?.name ?? null,
+          artistName: item.track?.artists?.[0]?.name ?? null,
           playedAtEpochMs: playedAt,
         } satisfies RecentlyPlayedItem;
       })

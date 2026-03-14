@@ -1,13 +1,12 @@
 import { AuthManager } from "./auth-manager.js";
 import { ConsoleNotifier } from "./console-notifier.js";
 import { getSafeConfigForLogs, loadConfig } from "./config.js";
-import { HistoryStore } from "./history-store.js";
 import { LikedRecentSyncService } from "./liked-recent-sync-service.js";
 import { logger } from "./logger.js";
-import { PlaylistManager } from "./playlist-manager.js";
-import { PlaylistSyncScheduler } from "./playlist-sync-scheduler.js";
 import { SpotifyClient } from "./spotify-client.js";
 import { TrackWatcher } from "./track-watcher.js";
+import { BackfillService } from "./backfill-service.js";
+import { createPrismaClient, PrismaHistoryRepository } from "./history-repository.js";
 
 async function main(): Promise<void> {
   const cfg = loadConfig();
@@ -18,54 +17,32 @@ async function main(): Promise<void> {
   logger.info("Spotify auth is ready.");
 
   const spotifyClient = new SpotifyClient(authManager, cfg, logger);
-  const historyStore = cfg.historyEnabled
-    ? new HistoryStore(cfg.historyStatePath, cfg.historyMaxItems, logger)
-    : null;
-  if (historyStore) {
-    await historyStore.load();
-  }
+  const prismaClient = createPrismaClient(cfg.databaseUrl);
+  const historyRepository = new PrismaHistoryRepository(prismaClient, logger);
 
-  const playlistManager = cfg.historyEnabled
-    ? new PlaylistManager(spotifyClient, logger, cfg.historyPlaylistName)
-    : null;
-  if (playlistManager) {
-    await playlistManager.ensurePlaylist();
-  }
-
-  const syncScheduler =
-    historyStore && playlistManager
-      ? new PlaylistSyncScheduler(
-          cfg.playlistSyncDebounceMs,
-          () => historyStore.getTrackUris(),
-          async (trackUris) => {
-            await playlistManager.replaceItems(trackUris);
-          },
-          logger,
-        )
-      : null;
+  const backfillService = new BackfillService(spotifyClient, historyRepository, logger, {
+    intervalMs: cfg.backfillIntervalMs,
+    limit: cfg.backfillLimit,
+  });
 
   const notifier = new ConsoleNotifier(logger);
   const watcher = new TrackWatcher(spotifyClient, notifier, logger, {
     pollIntervalMs: cfg.pollIntervalMs,
     printOnStart: cfg.printOnStart,
     onNewTrack: async (snapshot) => {
-      if (!historyStore || !syncScheduler) {
-        return;
-      }
       if (!snapshot.trackUri) {
         return;
       }
-      const changed = historyStore.addLiveTrack(snapshot.trackUri);
-      if (!changed) {
-        return;
-      }
-      await historyStore.save();
-      syncScheduler.markDirty();
+      await historyRepository.addLiveTrack({
+        trackUri: snapshot.trackUri,
+        trackName: snapshot.trackName,
+        artistName: snapshot.artists[0] ?? null,
+      });
     },
   });
 
-  syncScheduler?.markDirty();
   watcher.start();
+  backfillService.start();
 
   const likedRecentSyncService =
     cfg.likedRecentEnabled
@@ -89,8 +66,8 @@ async function main(): Promise<void> {
     logger.info(`Received ${signal}, shutting down.`);
     watcher.stop();
     likedRecentSyncService?.stop();
-    await syncScheduler?.stop();
-    await historyStore?.save();
+    backfillService.stop();
+    await historyRepository.close();
     process.exit(0);
   };
 
