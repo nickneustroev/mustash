@@ -39,3 +39,11 @@ export interface RecentlyPlayedItem {
   artistName: string | null;
   playedAtEpochMs: number;
 }
+
+export interface SavedTrackItem {
+  trackId: string;
+  trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
+  addedAtEpochMs: number;
+}

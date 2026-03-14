@@ -43,6 +43,12 @@ const schema = z.object({
     .optional()
     .transform((v) => v !== "false")
     .default(true),
+  SAVED_TRACKS_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+    .default(false),
+  SAVED_TRACKS_SYNC_INTERVAL_MS: z.coerce.number().int().min(15000).default(60000),
 });
 
 export interface AppConfig {
@@ -65,6 +71,8 @@ export interface AppConfig {
   spotifyProxyEnabled: boolean;
   spotifyProxyUrl: string;
   spotifyProxyOnGeoBlockOnly: boolean;
+  savedTracksEnabled: boolean;
+  savedTracksSyncIntervalMs: number;
 }
 
 export function loadConfig(): AppConfig {
@@ -100,6 +108,8 @@ export function loadConfig(): AppConfig {
     spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
     spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
     spotifyProxyOnGeoBlockOnly: env.SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY,
+    savedTracksEnabled: env.SAVED_TRACKS_ENABLED,
+    savedTracksSyncIntervalMs: env.SAVED_TRACKS_SYNC_INTERVAL_MS,
   };
 }
 
@@ -123,6 +133,8 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     spotifyProxyEnabled: cfg.spotifyProxyEnabled,
     spotifyProxyConfigured: cfg.spotifyProxyUrl.length > 0,
     spotifyProxyOnGeoBlockOnly: cfg.spotifyProxyOnGeoBlockOnly,
+    savedTracksEnabled: cfg.savedTracksEnabled,
+    savedTracksSyncIntervalMs: cfg.savedTracksSyncIntervalMs,
   };
 }
 

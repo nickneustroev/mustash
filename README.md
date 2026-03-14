@@ -8,6 +8,7 @@
 
 2. Сохраняет полную историю прослушиваний в SQLite через Prisma.
 3. Опционально поддерживает набор плейлистов по последним `Liked Songs` (например 20/50/100).
+4. Опционально синхронизирует и хранит полный список избранных треков в БД.
 
 Текущий статус: MVP реализован.
 
@@ -61,6 +62,9 @@ LIKED_RECENT_PLAYLIST_SUFFIX=[AUTO]
 LIKED_RECENT_SYNC_INTERVAL_MS=15000
 LIKED_RECENT_PLAYLIST_PRIVATE=true
 
+SAVED_TRACKS_ENABLED=false
+SAVED_TRACKS_SYNC_INTERVAL_MS=60000
+
 SPOTIFY_PROXY_ENABLED=false
 SPOTIFY_PROXY_URL=
 SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
@@ -84,9 +88,11 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 14. `LIKED_RECENT_PLAYLIST_SUFFIX` - суффикс имени liked-плейлиста.
 15. `LIKED_RECENT_SYNC_INTERVAL_MS` - интервал синхронизации liked-плейлистов.
 16. `LIKED_RECENT_PLAYLIST_PRIVATE` - делать liked-плейлисты приватными.
-17. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
-18. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
-19. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
+17. `SAVED_TRACKS_ENABLED` - включить/выключить синхронизацию избранных треков в БД.
+18. `SAVED_TRACKS_SYNC_INTERVAL_MS` - интервал синхронизации избранных треков (минимум 15000 мс).
+19. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
+20. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
+21. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
 
 ## Установка и запуск
 
@@ -157,6 +163,17 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 4. При создании нового liked-плейлиста автоматически выставляется обложка (`N recent`).
 5. При добавлении или удалении из избранного плейлисты обновляются автоматически.
 
+## Как Работает SAVED TRACKS
+
+1. Сервис синхронизирует полный список избранных треков в локальную SQLite-базу.
+2. При запуске выполняет полную синхронизацию (загружает все треки из Spotify).
+3. По таймеру обновляет изменения:
+   - Новые лайки → добавляются в БД
+   - Снятые лайки → удаляются из БД
+   - Изменившиеся метаданные → обновляются
+4. Хранит: trackId, trackUri, trackName, artistName, addedAtEpochMs.
+5. Включается через `SAVED_TRACKS_ENABLED=true`.
+
 ## Документация
 
 1. Дизайн-док: `DESIGN.md`
@@ -165,3 +182,4 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 4. План реализации плейлиста: `IMPLEMENTATION_PLAN_PLAYLIST.md`
 5. Addon-дизайн liked-плейлистов: `DESIGN_ADDON_LIKED_RECENT.md`
 6. План реализации liked-плейлистов: `IMPLEMENTATION_PLAN_LIKED_RECENT.md`
+7. Дизайн Saved Tracks: `DESIGN_SAVED_TRACKS.md`

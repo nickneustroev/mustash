@@ -31,3 +31,14 @@ model AppState {
     value     String
     updatedAt DateTime @updatedAt
 }
+
+model SavedTrack {
+    trackId        String   @id
+    trackUri       String   @unique
+    trackName      String?
+    artistName     String?
+    addedAtEpochMs BigInt
+    updatedAt      DateTime @updatedAt
+
+    @@index([trackId])
+}

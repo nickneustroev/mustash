@@ -1,7 +1,7 @@
 import type { AuthManager } from "./auth-manager.js";
 import type { AppConfig } from "./config.js";
 import { SpotifyRateLimitError } from "./errors.js";
-import type { Logger, PlaybackSnapshot, RecentlyPlayedItem } from "./types.js";
+import type { Logger, PlaybackSnapshot, RecentlyPlayedItem, SavedTrackItem } from "./types.js";
 import { ProxyAgent } from "undici";
 
 interface SpotifyArtist {
@@ -48,6 +48,7 @@ interface SpotifySavedTracksPage {
     added_at?: string;
     track?: SpotifyTrackItem | null;
   }>;
+  total?: number;
 }
 
 type TransportMode = "direct" | "proxy";
@@ -232,6 +233,41 @@ export class SpotifyClient {
     }
 
     return uris;
+  }
+
+  public async getSavedTracksPage(limit: number, offset: number): Promise<{ tracks: SavedTrackItem[]; total: number }> {
+    const url = `https://api.spotify.com/v1/me/tracks?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`;
+    const response = await this.requestWithAuth(url, { method: "GET" }, true);
+    const payload = (await response.json()) as SpotifySavedTracksPage;
+
+    const tracks: SavedTrackItem[] = [];
+    for (const item of payload.items) {
+      const track = item.track;
+      if (!track?.id) {
+        continue;
+      }
+
+      const addedAt = item.added_at ? Date.parse(item.added_at) : Date.now();
+      const trackId = track.id;
+      const trackUri = track.uri ?? deriveUriFromTrackId(trackId);
+
+      if (!trackUri) {
+        continue;
+      }
+
+      tracks.push({
+        trackId,
+        trackUri,
+        trackName: track.name ?? null,
+        artistName: track.artists?.[0]?.name ?? null,
+        addedAtEpochMs: addedAt,
+      });
+    }
+
+    return {
+      tracks,
+      total: payload.total ?? tracks.length,
+    };
   }
 
   private async requestWithAuth(url: string, init: RequestInit, allowRetryOnUnauthorized: boolean): Promise<Response> {

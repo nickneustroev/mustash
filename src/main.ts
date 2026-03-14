@@ -7,6 +7,8 @@ import { SpotifyClient } from "./spotify-client.js";
 import { TrackWatcher } from "./track-watcher.js";
 import { BackfillService } from "./backfill-service.js";
 import { createPrismaClient, PrismaHistoryRepository } from "./history-repository.js";
+import { createPrismaClient as createSavedTrackPrismaClient, PrismaSavedTrackRepository } from "./saved-track-repository.js";
+import { SavedTracksSyncService } from "./saved-tracks-sync-service.js";
 
 async function main(): Promise<void> {
   const cfg = loadConfig();
@@ -55,7 +57,20 @@ async function main(): Promise<void> {
         })
       : null;
 
+  const savedTracksRepository =
+    cfg.savedTracksEnabled
+      ? new PrismaSavedTrackRepository(createSavedTrackPrismaClient(cfg.databaseUrl), logger)
+      : null;
+
+  const savedTracksSyncService =
+    cfg.savedTracksEnabled && savedTracksRepository
+      ? new SavedTracksSyncService(spotifyClient, savedTracksRepository, logger, {
+          syncIntervalMs: cfg.savedTracksSyncIntervalMs,
+        })
+      : null;
+
   likedRecentSyncService?.start();
+  savedTracksSyncService?.start();
 
   let shuttingDown = false;
   const shutdown = async (signal: string) => {
@@ -66,8 +81,10 @@ async function main(): Promise<void> {
     logger.info(`Received ${signal}, shutting down.`);
     watcher.stop();
     likedRecentSyncService?.stop();
+    savedTracksSyncService?.stop();
     backfillService.stop();
     await historyRepository.close();
+    await savedTracksRepository?.close();
     process.exit(0);
   };
 
