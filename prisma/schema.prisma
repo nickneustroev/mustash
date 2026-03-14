@@ -6,20 +6,20 @@ datasource db {
     provider = "sqlite"
 }
 
-enum PlayEventSource {
+enum PlayedTrackSource {
     LIVE
     BACKFILL
 }
 
-model PlayEvent {
-    id                String          @id @default(cuid())
+model PlayedTrack {
+    id                String            @id @default(cuid())
     trackUri          String
     trackName         String?
     artistName        String?
     playedAtEpochMs   BigInt
-    source            PlayEventSource
+    source            PlayedTrackSource
     observedAtEpochMs BigInt
-    createdAt         DateTime        @default(now())
+    createdAt         DateTime          @default(now())
 
     @@unique([trackUri, playedAtEpochMs, source])
     @@index([playedAtEpochMs(sort: Desc)])

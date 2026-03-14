@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PlayEventSource, PrismaClient } from "@prisma/client";
+import { PlayedTrackSource, PrismaClient } from "@prisma/client";
 import type { HistoryEntry, Logger, RecentlyPlayedItem } from "./types.js";
 
 export interface HistoryRepository {
@@ -29,13 +29,13 @@ export class PrismaHistoryRepository implements HistoryRepository {
     artistName?: string | null;
   }): Promise<boolean> {
     const now = Date.now();
-    await this.prisma.playEvent.create({
+    await this.prisma.playedTrack.create({
       data: {
         trackUri: input.trackUri,
         trackName: input.trackName ?? null,
         artistName: input.artistName ?? null,
         playedAtEpochMs: BigInt(now),
-        source: PlayEventSource.LIVE,
+        source: PlayedTrackSource.LIVE,
         observedAtEpochMs: BigInt(now),
       },
     });
@@ -55,13 +55,13 @@ export class PrismaHistoryRepository implements HistoryRepository {
 
     for (const item of sorted) {
       try {
-        await this.prisma.playEvent.create({
+        await this.prisma.playedTrack.create({
           data: {
             trackUri: item.trackUri,
             trackName: item.trackName ?? null,
             artistName: item.artistName ?? null,
             playedAtEpochMs: BigInt(item.playedAtEpochMs),
-            source: PlayEventSource.BACKFILL,
+            source: PlayedTrackSource.BACKFILL,
             observedAtEpochMs,
           },
         });
@@ -77,7 +77,7 @@ export class PrismaHistoryRepository implements HistoryRepository {
   }
 
   public async getRecentEntries(limit: number): Promise<HistoryEntry[]> {
-    const events = await this.prisma.playEvent.findMany({
+    const events = await this.prisma.playedTrack.findMany({
       orderBy: { playedAtEpochMs: "desc" },
       take: Math.max(1, limit),
     });
@@ -87,7 +87,7 @@ export class PrismaHistoryRepository implements HistoryRepository {
       trackName: event.trackName,
       artistName: event.artistName,
       playedAtEpochMs: Number(event.playedAtEpochMs),
-      source: event.source === PlayEventSource.BACKFILL ? "backfill" : "live",
+      source: event.source === PlayedTrackSource.BACKFILL ? "backfill" : "live",
     }));
   }
 
