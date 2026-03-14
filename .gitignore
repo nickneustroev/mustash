@@ -5,6 +5,7 @@ dist/
 .history-state.json
 coverage/
 npm-debug.log*
+*.db
 test/**/*.js
 test/**/*.js.map
 test/**/*.d.ts
