@@ -330,7 +330,7 @@ export class SpotifyClient {
   }
 
   private shouldStartWithProxy(): boolean {
-    return this.canUseProxy() && !this.cfg.spotifyProxyOnGeoBlockOnly;
+    return this.canUseProxy();
   }
 
   private canUseProxy(): boolean {

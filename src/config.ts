@@ -38,11 +38,6 @@ const schema = z.object({
     .transform((v) => v === "true")
     .default(false),
   SPOTIFY_PROXY_URL: z.string().default(""),
-  SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY: z
-    .string()
-    .optional()
-    .transform((v) => v !== "false")
-    .default(true),
   SAVED_TRACKS_ENABLED: z
     .string()
     .optional()
@@ -83,7 +78,6 @@ export interface AppConfig {
   likedRecentPlaylistPrivate: boolean;
   spotifyProxyEnabled: boolean;
   spotifyProxyUrl: string;
-  spotifyProxyOnGeoBlockOnly: boolean;
   savedTracksEnabled: boolean;
   savedTracksSyncIntervalMs: number;
   // S3 Backup Configuration
@@ -129,7 +123,6 @@ export function loadConfig(): AppConfig {
     likedRecentPlaylistPrivate: env.LIKED_RECENT_PLAYLIST_PRIVATE,
     spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
     spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
-    spotifyProxyOnGeoBlockOnly: env.SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY,
     savedTracksEnabled: env.SAVED_TRACKS_ENABLED,
     savedTracksSyncIntervalMs: env.SAVED_TRACKS_SYNC_INTERVAL_MS,
     // S3 Backup Configuration
@@ -163,7 +156,6 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     likedRecentPlaylistPrivate: cfg.likedRecentPlaylistPrivate,
     spotifyProxyEnabled: cfg.spotifyProxyEnabled,
     spotifyProxyConfigured: cfg.spotifyProxyUrl.length > 0,
-    spotifyProxyOnGeoBlockOnly: cfg.spotifyProxyOnGeoBlockOnly,
     savedTracksEnabled: cfg.savedTracksEnabled,
     savedTracksSyncIntervalMs: cfg.savedTracksSyncIntervalMs,
     s3Endpoint: cfg.s3Endpoint,

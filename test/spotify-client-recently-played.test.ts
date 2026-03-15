@@ -24,7 +24,6 @@ function createConfig(): AppConfig {
     likedRecentPlaylistPrivate: true,
     spotifyProxyEnabled: false,
     spotifyProxyUrl: "",
-    spotifyProxyOnGeoBlockOnly: true,
   };
 }
 

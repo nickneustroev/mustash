@@ -24,7 +24,6 @@ function createConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     likedRecentPlaylistPrivate: true,
     spotifyProxyEnabled: true,
     spotifyProxyUrl: "http://user:pass@127.0.0.1:8888",
-    spotifyProxyOnGeoBlockOnly: true,
     ...overrides,
   };
 }
@@ -38,36 +37,52 @@ function createLogger(): Logger {
 }
 
 describe("SpotifyClient proxy fallback", () => {
-  it("retries through proxy on geo-block 403", async () => {
+  it("starts with proxy immediately when proxy is enabled", async () => {
+    const auth = {
+      getAccessToken: vi.fn().mockResolvedValue("token"),
+      handleUnauthorized: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthManager;
+    const log = createLogger();
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({ id: "user-1" }), { status: 200 }));
+
+    const client = new SpotifyClient(
+      auth,
+      createConfig({
+        spotifyProxyEnabled: true,
+      }),
+      log,
+      fetchMock,
+    );
+
+    await expect(client.getCurrentUserId()).resolves.toBe("user-1");
+    expect((fetchMock.mock.calls[0][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
+  });
+
+  it("fails immediately through proxy on geo-block 403 when proxy is enabled", async () => {
     const auth = {
       getAccessToken: vi.fn().mockResolvedValue("token"),
       handleUnauthorized: vi.fn().mockResolvedValue(undefined),
     } as unknown as AuthManager;
     const log = createLogger();
 
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            error: {
-              status: 403,
-              message: "Spotify is unavailable in this country",
-            },
-          }),
-          { status: 403, headers: { "Content-Type": "application/json" } },
-        ),
-      )
-      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "user-1" }), { status: 200 }));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: {
+            status: 403,
+            message: "Spotify is unavailable in this country",
+          },
+        }),
+        { status: 403, headers: { "Content-Type": "application/json" } },
+      ),
+    );
 
     const client = new SpotifyClient(auth, createConfig(), log, fetchMock);
-    const userId = await client.getCurrentUserId();
 
-    expect(userId).toBe("user-1");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect((fetchMock.mock.calls[0][1] as { dispatcher?: unknown }).dispatcher).toBeUndefined();
-    expect((fetchMock.mock.calls[1][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
-    expect(log.warn).toHaveBeenCalledWith(
+    await expect(client.getCurrentUserId()).rejects.toThrow("Spotify request failed (403)");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
+    expect(log.warn).not.toHaveBeenCalledWith(
       "Spotify API geo-block detected (403). Retrying request via configured proxy.",
     );
   });
@@ -131,10 +146,10 @@ describe("SpotifyClient proxy fallback", () => {
     await expect(client.getCurrentUserId()).rejects.toThrow("Spotify request failed (403)");
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect((fetchMock.mock.calls[0][1] as { dispatcher?: unknown }).dispatcher).toBeUndefined();
+    expect((fetchMock.mock.calls[0][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
   });
 
-  it("keeps using proxy for next requests after first geo-block fallback", async () => {
+  it("keeps using proxy for next requests", async () => {
     const auth = {
       getAccessToken: vi.fn().mockResolvedValue("token"),
       handleUnauthorized: vi.fn().mockResolvedValue(undefined),
@@ -143,17 +158,6 @@ describe("SpotifyClient proxy fallback", () => {
 
     const fetchMock = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            error: {
-              status: 403,
-              message: "Spotify is unavailable in this country",
-            },
-          }),
-          { status: 403, headers: { "Content-Type": "application/json" } },
-        ),
-      )
       .mockResolvedValueOnce(new Response(JSON.stringify({ id: "user-1" }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ id: "user-1" }), { status: 200 }));
 
@@ -162,8 +166,8 @@ describe("SpotifyClient proxy fallback", () => {
     await client.getCurrentUserId();
     await client.getCurrentUserId();
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((fetchMock.mock.calls[0][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
     expect((fetchMock.mock.calls[1][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
-    expect((fetchMock.mock.calls[2][1] as { dispatcher?: unknown }).dispatcher).toBeDefined();
   });
 });

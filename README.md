@@ -67,7 +67,6 @@ SAVED_TRACKS_SYNC_INTERVAL_MS=60000
 
 SPOTIFY_PROXY_ENABLED=false
 SPOTIFY_PROXY_URL=
-SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 
 # S3 Backup Configuration (Timeweb Cloud)
 BACKUP_ENABLED=false
@@ -102,12 +101,11 @@ BACKUP_RETENTION_DAYS=7
 18. `SAVED_TRACKS_SYNC_INTERVAL_MS` - интервал синхронизации избранных треков (минимум 15000 мс).
 19. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
 20. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
-21. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
-22. `BACKUP_ENABLED` - включить ежесуточный бэкап базы в S3 (`true/false`).
-23. `S3_ENDPOINT` - S3 endpoint (для Timeweb Cloud: `https://s3.timeweb.cloud`).
-24. `S3_BUCKET` - имя S3-бакета для хранения бэкапов.
-25. `S3_PREFIX` - префикс (папка) внутри бакета, куда складываются бэкапы, например `backups` или `spotify-helper/history`.
-26. `S3_ACCESS_KEY` - S3 access key.
+21. `BACKUP_ENABLED` - включить ежесуточный бэкап базы в S3 (`true/false`).
+22. `S3_ENDPOINT` - S3 endpoint (для Timeweb Cloud: `https://s3.timeweb.cloud`).
+23. `S3_BUCKET` - имя S3-бакета для хранения бэкапов.
+24. `S3_PREFIX` - префикс (папка) внутри бакета, куда складываются бэкапы, например `backups` или `spotify-helper/history`.
+25. `S3_ACCESS_KEY` - S3 access key.
 27. `S3_SECRET_KEY` - S3 secret key.
 28. `BACKUP_CRON` - cron-выражение для запуска бэкапа (по умолчанию `0 0 * * *` - ежедневно в 00:00 UTC).
 29. `BACKUP_RETENTION_DAYS` - количество дней хранения бэкапов (старше удаляются автоматически).
