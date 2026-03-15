@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import http from "node:http";
+import path from "node:path";
 import { URL } from "node:url";
 import { exec } from "node:child_process";
 import type { AppConfig } from "./config.js";
@@ -99,6 +100,7 @@ export class AuthManager {
       );
     }
     const { code, returnedState } = await callbackPromise;
+    this.log.info("Authorization callback received. Exchanging code for tokens.");
 
     if (returnedState !== state) {
       throw new Error("OAuth state mismatch. Aborting for safety.");
@@ -204,6 +206,8 @@ export class AuthManager {
       throw new Error("Token exchange response missing required token fields.");
     }
 
+    this.log.info("Spotify token exchange completed successfully.");
+
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -246,6 +250,13 @@ export class AuthManager {
 
   private async readTokensFromDisk(): Promise<OAuthTokens | null> {
     try {
+      const stat = await fs.stat(this.cfg.tokenStoragePath);
+      if (stat.isDirectory()) {
+        this.log.warn(
+          `Token storage path points to a directory, expected a file: ${this.cfg.tokenStoragePath}`,
+        );
+        return null;
+      }
       const raw = await fs.readFile(this.cfg.tokenStoragePath, "utf-8");
       const parsed = JSON.parse(raw) as Partial<OAuthTokens>;
       if (!parsed.accessToken || !parsed.refreshToken || !parsed.expiresAtEpochMs) {
@@ -259,14 +270,23 @@ export class AuthManager {
       };
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        this.log.warn("Unable to read token file, new login will be requested.");
+        const err = error as NodeJS.ErrnoException;
+        this.log.warn(
+          `Unable to read token file (${this.cfg.tokenStoragePath}): ${err.code ?? "UNKNOWN"} ${err.message}`,
+        );
       }
       return null;
     }
   }
 
   private async writeTokensToDisk(tokens: OAuthTokens): Promise<void> {
+    await fs.mkdir(path.dirname(this.cfg.tokenStoragePath), { recursive: true });
+    const existing = await fs.stat(this.cfg.tokenStoragePath).catch(() => null);
+    if (existing?.isDirectory()) {
+      throw new Error(`Token storage path is a directory, expected a file: ${this.cfg.tokenStoragePath}`);
+    }
     await fs.writeFile(this.cfg.tokenStoragePath, `${JSON.stringify(tokens, null, 2)}\n`, "utf-8");
+    this.log.info(`Spotify tokens saved to ${this.cfg.tokenStoragePath}.`);
   }
 }
 

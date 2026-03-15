@@ -12,7 +12,6 @@ services:
       - "3000:3000"
     volumes:
       - ./data:/app/data
-      - ./.spotify-tokens.json:/app/.spotify-tokens.json
     restart: unless-stopped
 
   backup:
@@ -26,7 +25,6 @@ services:
       DATABASE_URL: file:/app/data/history.db
     volumes:
       - ./data:/app/data
-      - ./.spotify-tokens.json:/app/.spotify-tokens.json
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |

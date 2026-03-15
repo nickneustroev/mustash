@@ -49,7 +49,7 @@ SPOTIFY_LISTEN_PORT=3000
 
 POLL_INTERVAL_MS=2500
 PRINT_ON_START=true
-TOKEN_STORAGE_PATH=.spotify-tokens.json
+TOKEN_STORAGE_PATH=/app/data/.spotify-tokens.json
 
 DATABASE_URL=file:/app/data/history.db
 BACKFILL_INTERVAL_MS=60000
@@ -88,7 +88,7 @@ BACKUP_RETENTION_DAYS=7
 4. `SPOTIFY_LISTEN_PORT` - внутренний порт HTTP-сервера приложения (актуально для Docker/Coolify; обычно `3000`).
 5. `POLL_INTERVAL_MS` - интервал опроса API в миллисекундах.
 6. `PRINT_ON_START` - печатать текущий трек сразу при старте (`true/false`, по умолчанию `true`).
-7. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов.
+7. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов. Для Docker/Coolify используй путь внутри примонтированной директории, например `/app/data/.spotify-tokens.json`.
 8. `DATABASE_URL` - путь к SQLite-базе для полной истории (пример: `file:/app/data/history.db`).
 9. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
 10. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
@@ -170,6 +170,14 @@ docker-compose up -d app
 # Просмотр логов
 docker-compose logs -f app
 ```
+
+Для Coolify не используй отдельный mount на файл токена. Храни токен внутри persistent storage директории, например:
+
+```env
+TOKEN_STORAGE_PATH=/app/data/.spotify-tokens.json
+```
+
+Если `TOKEN_STORAGE_PATH` указывает на директорию или на путь вне persistent storage, после OAuth авторизация может завершаться в браузере, но токен не сохранится и контейнер снова запросит логин при следующем старте.
 
 ### Запуск с бэкапом
 
