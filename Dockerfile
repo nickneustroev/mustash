@@ -25,9 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
@@ -36,5 +37,5 @@ COPY scripts/backup-s3.sh ./scripts/
 
 EXPOSE 3000
 
-# Default command runs the main app
-CMD ["node", "dist/main.js"]
+# Apply database migrations before starting the app
+CMD ["npm", "run", "start:docker"]

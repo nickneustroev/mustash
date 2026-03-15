@@ -9,6 +9,7 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
+    "start:docker": "prisma migrate deploy && node dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
