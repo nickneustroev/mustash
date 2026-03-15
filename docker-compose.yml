@@ -34,7 +34,8 @@ services:
           echo "Backup enabled, starting cron..."; \
           printf '%s cd /app && node dist/backup-s3.js >> /var/log/backup.log 2>&1\n' "$$BACKUP_CRON" | crontab -; \
           touch /var/log/backup.log; \
-          cron -f; \
+          tail -F /var/log/backup.log & \
+          exec cron -f; \
         else \
           echo "Backup not enabled, sleeping..."; \
           tail -f /dev/null; \
