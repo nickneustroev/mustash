@@ -56,8 +56,6 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    profiles:
-      - studio
 
 volumes:
   data:
