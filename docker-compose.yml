@@ -38,5 +38,18 @@ services:
     profiles:
       - backup
 
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.prisma-studio
+    container_name: spotify-helper-prisma-studio
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    profiles:
+      - studio
+
 volumes:
   data:
