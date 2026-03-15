@@ -49,6 +49,18 @@ const schema = z.object({
     .transform((v) => v === "true")
     .default(false),
   SAVED_TRACKS_SYNC_INTERVAL_MS: z.coerce.number().int().min(15000).default(60000),
+  // S3 Backup Configuration
+  S3_ENDPOINT: z.string().url().default("https://s3.timeweb.cloud"),
+  S3_BUCKET: z.string().min(1).default("backups"),
+  S3_ACCESS_KEY: z.string().min(1).optional(),
+  S3_SECRET_KEY: z.string().min(1).optional(),
+  BACKUP_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+    .default(false),
+  BACKUP_CRON: z.string().default("0 0 * * *"), // Daily at 00:00 UTC
+  BACKUP_RETENTION_DAYS: z.coerce.number().int().min(1).default(7),
 });
 
 export interface AppConfig {
@@ -73,6 +85,14 @@ export interface AppConfig {
   spotifyProxyOnGeoBlockOnly: boolean;
   savedTracksEnabled: boolean;
   savedTracksSyncIntervalMs: number;
+  // S3 Backup Configuration
+  s3Endpoint: string;
+  s3Bucket: string;
+  s3AccessKey: string | undefined;
+  s3SecretKey: string | undefined;
+  backupEnabled: boolean;
+  backupCron: string;
+  backupRetentionDays: number;
 }
 
 export function loadConfig(): AppConfig {
@@ -110,6 +130,14 @@ export function loadConfig(): AppConfig {
     spotifyProxyOnGeoBlockOnly: env.SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY,
     savedTracksEnabled: env.SAVED_TRACKS_ENABLED,
     savedTracksSyncIntervalMs: env.SAVED_TRACKS_SYNC_INTERVAL_MS,
+    // S3 Backup Configuration
+    s3Endpoint: env.S3_ENDPOINT,
+    s3Bucket: env.S3_BUCKET,
+    s3AccessKey: env.S3_ACCESS_KEY,
+    s3SecretKey: env.S3_SECRET_KEY,
+    backupEnabled: env.BACKUP_ENABLED,
+    backupCron: env.BACKUP_CRON,
+    backupRetentionDays: env.BACKUP_RETENTION_DAYS,
   };
 }
 
@@ -135,6 +163,11 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     spotifyProxyOnGeoBlockOnly: cfg.spotifyProxyOnGeoBlockOnly,
     savedTracksEnabled: cfg.savedTracksEnabled,
     savedTracksSyncIntervalMs: cfg.savedTracksSyncIntervalMs,
+    s3Endpoint: cfg.s3Endpoint,
+    s3Bucket: cfg.s3Bucket,
+    backupEnabled: cfg.backupEnabled,
+    backupCron: cfg.backupCron,
+    backupRetentionDays: cfg.backupRetentionDays,
   };
 }
 

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spotify-helper
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./spotify-tokens.json:/app/spotify-tokens.json
+    restart: unless-stopped
+
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spotify-helper-backup
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./spotify-tokens.json:/app/spotify-tokens.json
+      - ./crontab:/etc/crontabs/root:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ "$BACKUP_ENABLED" = "true" ]; then \
+          echo "Backup enabled, starting cron..."; \
+          crond -f -l 2; \
+        else \
+          echo "Backup not enabled, sleeping..."; \
+          tail -f /dev/null; \
+        fi
+    restart: unless-stopped
+    profiles:
+      - backup
+
+volumes:
+  data:

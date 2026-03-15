@@ -14,9 +14,11 @@
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:studio": "prisma studio --port 5555"
+    "prisma:studio": "prisma studio --port 5555",
+    "backup": "tsx src/backup-s3.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.744.0",
     "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "better-sqlite3": "^11.10.0",

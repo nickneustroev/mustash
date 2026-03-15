@@ -1,0 +1,2 @@
+# Backup cron - daily at 00:00 UTC
+0 0 * * * cd /app && node dist/backup-s3.js >> /var/log/backup.log 2>&1

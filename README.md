@@ -68,6 +68,15 @@ SAVED_TRACKS_SYNC_INTERVAL_MS=60000
 SPOTIFY_PROXY_ENABLED=false
 SPOTIFY_PROXY_URL=
 SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
+
+# S3 Backup Configuration (Timeweb Cloud)
+BACKUP_ENABLED=false
+S3_ENDPOINT=https://s3.timeweb.cloud
+S3_BUCKET=backups
+S3_ACCESS_KEY=your_access_key
+S3_SECRET_KEY=your_secret_key
+BACKUP_CRON=0 0 * * *
+BACKUP_RETENTION_DAYS=7
 ```
 
 Описание переменных:
@@ -93,6 +102,13 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 19. `SPOTIFY_PROXY_ENABLED` - включить поддержку прокси для запросов к Spotify API.
 20. `SPOTIFY_PROXY_URL` - URL прокси (пример: `http://user:pass@host:port`).
 21. `SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY` - использовать прокси только после geo-block `403` (`true`) или сразу для всех запросов (`false`).
+22. `BACKUP_ENABLED` - включить ежесуточный бэкап базы в S3 (`true/false`).
+23. `S3_ENDPOINT` - S3 endpoint (для Timeweb Cloud: `https://s3.timeweb.cloud`).
+24. `S3_BUCKET` - имя S3-бакета для хранения бэкапов.
+25. `S3_ACCESS_KEY` - S3 access key.
+26. `S3_SECRET_KEY` - S3 secret key.
+27. `BACKUP_CRON` - cron-выражение для запуска бэкапа (по умолчанию `0 0 * * *` - ежедневно в 00:00 UTC).
+28. `BACKUP_RETENTION_DAYS` - количество дней хранения бэкапов (старше удаляются автоматически).
 
 ## Установка и запуск
 
@@ -140,6 +156,43 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 6. `npm run prisma:generate` - генерация Prisma Client.
 7. `npm run prisma:migrate:dev` - запуск dev-миграций Prisma.
 8. `npm run prisma:studio` - запуск Prisma Studio на порту `5555`.
+
+## Docker-запуск
+
+### Основное приложение
+
+```bash
+# Сборка и запуск
+docker-compose up -d app
+
+# Просмотр логов
+docker-compose logs -f app
+```
+
+### Запуск с бэкапом
+
+Для запуска backup-сервиса с cron:
+
+```bash
+# В .env добавить:
+BACKUP_ENABLED=true
+S3_ENDPOINT=https://s3.timeweb.cloud
+S3_BUCKET=your-bucket-name
+S3_ACCESS_KEY=your_access_key
+S3_SECRET_KEY=your_secret_key
+DATABASE_URL=file:/app/data/history.db
+
+# Запустить backup-контейнер
+docker-compose --profile backup up -d backup
+
+# Просмотр логов бэкапа
+docker-compose logs -f backup
+```
+
+Backup работает по cron (по умолчанию в 00:00 UTC) и:
+1. Копирует SQLite-базу во временный файл.
+2. Загружает в S3 с timestamp в имени файла.
+3. Удаляет бэкапы старше `BACKUP_RETENTION_DAYS` (по умолчанию 7 дней).
 
 ## Примечания по безопасности
 
