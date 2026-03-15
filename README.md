@@ -51,7 +51,7 @@ POLL_INTERVAL_MS=2500
 PRINT_ON_START=true
 TOKEN_STORAGE_PATH=.spotify-tokens.json
 
-DATABASE_URL=file:/data/history.db
+DATABASE_URL=file:/app/data/history.db
 BACKFILL_INTERVAL_MS=60000
 BACKFILL_LIMIT=50
 
@@ -88,7 +88,7 @@ BACKUP_RETENTION_DAYS=7
 5. `POLL_INTERVAL_MS` - интервал опроса API в миллисекундах.
 6. `PRINT_ON_START` - печатать текущий трек сразу при старте (`true/false`, по умолчанию `true`).
 7. `TOKEN_STORAGE_PATH` - путь к локальному файлу хранения токенов.
-8. `DATABASE_URL` - путь к SQLite-базе для полной истории (пример: `file:/data/history.db`).
+8. `DATABASE_URL` - путь к SQLite-базе для полной истории (пример: `file:/app/data/history.db`).
 9. `BACKFILL_INTERVAL_MS` - интервал добора пропусков из recently played.
 10. `BACKFILL_LIMIT` - количество элементов recently played за один backfill.
 11. `LIKED_RECENT_ENABLED` - включить/выключить авто-плейлисты liked-треков.
@@ -180,7 +180,7 @@ S3_ENDPOINT=https://s3.timeweb.cloud
 S3_BUCKET=your-bucket-name
 S3_ACCESS_KEY=your_access_key
 S3_SECRET_KEY=your_secret_key
-DATABASE_URL=file:/app/data/history.db
+BACKUP_CRON=0 0 * * *
 
 # Запустить backup-контейнер
 docker-compose --profile backup up -d backup

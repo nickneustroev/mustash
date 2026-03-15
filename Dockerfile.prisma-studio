@@ -2,21 +2,19 @@ FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-# Установка только prisma (без @prisma/client, он не нужен для studio)
-RUN npm install -g prisma
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Копируем package.json и устанавливаем зависимости для генерации клиента
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Копируем схему и конфиг
 COPY prisma ./prisma
 COPY prisma.config.ts ./
 
-# Генерируем Prisma Client
 RUN npx prisma generate
 
 EXPOSE 5555
 
 # Запускаем studio с указанием на БД в volume
-CMD ["npx", "prisma", "studio", "--port", "5555"]
+CMD ["npx", "prisma", "studio", "--port", "5555", "--browser", "none"]
