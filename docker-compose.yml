@@ -51,12 +51,14 @@ services:
       - .env
     environment:
       DATABASE_URL: file:/app/data/history.db
-    ports:
-      - "5555:5555"
     expose:
       - "5555"
     volumes:
       - ./data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.prisma-studio-basicauth.basicauth.users=admin:$2y$05$autKTE.9xWrb5tJfic5Gge3XeKqqHreEj7lykPSYCreAu1dB1AjnW"
+      - "traefik.http.services.prisma-studio.loadbalancer.server.port=5555"
     healthcheck:
       test:
         [
