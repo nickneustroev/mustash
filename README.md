@@ -181,7 +181,12 @@ TOKEN_STORAGE_PATH=/app/data/.spotify-tokens.json
 
 ### Запуск с бэкапом
 
-Для запуска backup-сервиса с cron:
+`backup` теперь входит в обычный `docker-compose up -d`. Его поведение определяется переменной `BACKUP_ENABLED`:
+
+- `BACKUP_ENABLED=true` - контейнер запускает cron и отправляет бэкапы в S3.
+- `BACKUP_ENABLED=false` - контейнер остаётся запущенным, но ничего не бэкапит.
+
+Для включения бэкапов:
 
 ```bash
 # В .env добавить:
@@ -193,8 +198,8 @@ S3_ACCESS_KEY=your_access_key
 S3_SECRET_KEY=your_secret_key
 BACKUP_CRON=0 0 * * *
 
-# Запустить backup-контейнер
-docker-compose --profile backup up -d backup
+# Запустить все сервисы
+docker-compose up -d
 
 # Просмотр логов бэкапа
 docker-compose logs -f backup

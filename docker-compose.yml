@@ -39,8 +39,6 @@ services:
           tail -f /dev/null; \
         fi
     restart: unless-stopped
-    profiles:
-      - backup
 
   prisma-studio:
     build:
