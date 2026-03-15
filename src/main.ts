@@ -11,7 +11,7 @@ import {
   estimateLivePlayedAtEpochMs,
   PrismaHistoryRepository,
 } from "./history-repository.js";
-import { createPrismaClient as createSavedTrackPrismaClient, PrismaSavedTrackRepository } from "./saved-track-repository.js";
+import { PrismaSavedTrackRepository } from "./saved-track-repository.js";
 import { PrismaArchiveRepository } from "./archive-repository.js";
 import { SavedTracksSyncService } from "./saved-tracks-sync-service.js";
 
@@ -40,15 +40,23 @@ async function main(): Promise<void> {
       if (!snapshot.trackUri) {
         return;
       }
-      await historyRepository.addLiveTrack({
+      const playedAtEpochMs = estimateLivePlayedAtEpochMs({
+        fetchedAtEpochMs: snapshot.fetchedAtEpochMs,
+        progressMs: snapshot.progressMs,
+      });
+
+      const inserted = await historyRepository.addLiveTrack({
         trackUri: snapshot.trackUri,
-        playedAtEpochMs: estimateLivePlayedAtEpochMs({
-          fetchedAtEpochMs: snapshot.fetchedAtEpochMs,
-          progressMs: snapshot.progressMs,
-        }),
+        playedAtEpochMs,
         trackName: snapshot.trackName,
         artistName: snapshot.artists[0] ?? null,
       });
+
+      logger.info(
+        inserted
+          ? `Live track saved: ${snapshot.trackUri} at ${playedAtEpochMs}.`
+          : `Live track already exists, refreshed metadata: ${snapshot.trackUri} at ${playedAtEpochMs}.`,
+      );
     },
   });
 
@@ -68,12 +76,12 @@ async function main(): Promise<void> {
 
   const savedTracksRepository =
     cfg.savedTracksEnabled
-      ? new PrismaSavedTrackRepository(createSavedTrackPrismaClient(cfg.databaseUrl), logger)
+      ? new PrismaSavedTrackRepository(prismaClient, logger)
       : null;
 
   const archiveRepository =
     cfg.savedTracksEnabled
-      ? new PrismaArchiveRepository(createSavedTrackPrismaClient(cfg.databaseUrl), logger)
+      ? new PrismaArchiveRepository(prismaClient, logger)
       : null;
 
   const savedTracksSyncService =
@@ -98,8 +106,6 @@ async function main(): Promise<void> {
     savedTracksSyncService?.stop();
     backfillService.stop();
     await historyRepository.close();
-    await savedTracksRepository?.close();
-    await archiveRepository?.close();
     process.exit(0);
   };
 
