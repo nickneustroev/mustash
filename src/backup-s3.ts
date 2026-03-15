@@ -36,10 +36,10 @@ function getDatabasePath(): string {
 /**
  * Upload backup file to S3
  */
-async function uploadToS3(filePath: string, s3Client: S3Client, bucket: string): Promise<string> {
+async function uploadToS3(filePath: string, s3Client: S3Client, bucket: string, prefix: string): Promise<string> {
   const fileName = basename(filePath);
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const s3Key = `backups/${timestamp}-${fileName}`;
+  const s3Key = `${prefix}/${timestamp}-${fileName}`;
 
   logger.info(`Uploading backup to S3: file=${filePath}, s3Key=${s3Key}`);
 
@@ -65,6 +65,7 @@ async function uploadToS3(filePath: string, s3Client: S3Client, bucket: string):
 async function cleanupOldBackups(
   s3Client: S3Client,
   bucket: string,
+  prefix: string,
   retentionDays: number
 ): Promise<number> {
   const cutoffDate = new Date();
@@ -74,7 +75,7 @@ async function cleanupOldBackups(
 
   const listCommand = new ListObjectsV2Command({
     Bucket: bucket,
-    Prefix: "backups/",
+    Prefix: `${prefix}/`,
   });
 
   const response = await s3Client.send(listCommand);
@@ -153,11 +154,16 @@ export async function createBackup(options: BackupOptions = {}): Promise<void> {
 
   // Upload to S3
   if (!options.dryRun) {
-    const s3Key = await uploadToS3(backupPath, s3Client, config.s3Bucket);
+    const s3Key = await uploadToS3(backupPath, s3Client, config.s3Bucket, config.s3Prefix);
     logger.info(`Backup uploaded successfully: s3Key=${s3Key}`);
 
     // Cleanup old backups
-    const deletedCount = await cleanupOldBackups(s3Client, config.s3Bucket, config.backupRetentionDays);
+    const deletedCount = await cleanupOldBackups(
+      s3Client,
+      config.s3Bucket,
+      config.s3Prefix,
+      config.backupRetentionDays
+    );
     logger.info(`Old backups cleanup completed: deletedCount=${deletedCount}`);
 
     // Remove local temp backup

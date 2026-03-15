@@ -73,6 +73,7 @@ SPOTIFY_PROXY_ON_GEO_BLOCK_ONLY=true
 BACKUP_ENABLED=false
 S3_ENDPOINT=https://s3.timeweb.cloud
 S3_BUCKET=backups
+S3_PREFIX=backups
 S3_ACCESS_KEY=your_access_key
 S3_SECRET_KEY=your_secret_key
 BACKUP_CRON=0 0 * * *
@@ -105,10 +106,11 @@ BACKUP_RETENTION_DAYS=7
 22. `BACKUP_ENABLED` - включить ежесуточный бэкап базы в S3 (`true/false`).
 23. `S3_ENDPOINT` - S3 endpoint (для Timeweb Cloud: `https://s3.timeweb.cloud`).
 24. `S3_BUCKET` - имя S3-бакета для хранения бэкапов.
-25. `S3_ACCESS_KEY` - S3 access key.
-26. `S3_SECRET_KEY` - S3 secret key.
-27. `BACKUP_CRON` - cron-выражение для запуска бэкапа (по умолчанию `0 0 * * *` - ежедневно в 00:00 UTC).
-28. `BACKUP_RETENTION_DAYS` - количество дней хранения бэкапов (старше удаляются автоматически).
+25. `S3_PREFIX` - префикс (папка) внутри бакета, куда складываются бэкапы, например `backups` или `spotify-helper/history`.
+26. `S3_ACCESS_KEY` - S3 access key.
+27. `S3_SECRET_KEY` - S3 secret key.
+28. `BACKUP_CRON` - cron-выражение для запуска бэкапа (по умолчанию `0 0 * * *` - ежедневно в 00:00 UTC).
+29. `BACKUP_RETENTION_DAYS` - количество дней хранения бэкапов (старше удаляются автоматически).
 
 ## Установка и запуск
 
@@ -178,6 +180,7 @@ docker-compose logs -f app
 BACKUP_ENABLED=true
 S3_ENDPOINT=https://s3.timeweb.cloud
 S3_BUCKET=your-bucket-name
+S3_PREFIX=backups
 S3_ACCESS_KEY=your_access_key
 S3_SECRET_KEY=your_secret_key
 BACKUP_CRON=0 0 * * *
@@ -191,7 +194,7 @@ docker-compose logs -f backup
 
 Backup работает по cron (по умолчанию в 00:00 UTC) и:
 1. Копирует SQLite-базу во временный файл.
-2. Загружает в S3 с timestamp в имени файла.
+2. Загружает в S3 в префикс `S3_PREFIX` с timestamp в имени файла.
 3. Удаляет бэкапы старше `BACKUP_RETENTION_DAYS` (по умолчанию 7 дней).
 
 ## Примечания по безопасности
