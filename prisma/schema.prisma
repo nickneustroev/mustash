@@ -21,7 +21,7 @@ model PlayedTrack {
     observedAtEpochMs BigInt
     createdAt         DateTime          @default(now())
 
-    @@unique([trackUri, playedAtEpochMs, source])
+    @@unique([trackUri, playedAtEpochMs])
     @@index([playedAtEpochMs(sort: Desc)])
     @@index([trackUri, playedAtEpochMs])
 }

@@ -6,7 +6,11 @@ import { logger } from "./logger.js";
 import { SpotifyClient } from "./spotify-client.js";
 import { TrackWatcher } from "./track-watcher.js";
 import { BackfillService } from "./backfill-service.js";
-import { createPrismaClient, PrismaHistoryRepository } from "./history-repository.js";
+import {
+  createPrismaClient,
+  estimateLivePlayedAtEpochMs,
+  PrismaHistoryRepository,
+} from "./history-repository.js";
 import { createPrismaClient as createSavedTrackPrismaClient, PrismaSavedTrackRepository } from "./saved-track-repository.js";
 import { PrismaArchiveRepository } from "./archive-repository.js";
 import { SavedTracksSyncService } from "./saved-tracks-sync-service.js";
@@ -38,6 +42,10 @@ async function main(): Promise<void> {
       }
       await historyRepository.addLiveTrack({
         trackUri: snapshot.trackUri,
+        playedAtEpochMs: estimateLivePlayedAtEpochMs({
+          fetchedAtEpochMs: snapshot.fetchedAtEpochMs,
+          progressMs: snapshot.progressMs,
+        }),
         trackName: snapshot.trackName,
         artistName: snapshot.artists[0] ?? null,
       });

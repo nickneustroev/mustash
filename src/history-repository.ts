@@ -5,7 +5,12 @@ import { PlayedTrackSource, PrismaClient } from "@prisma/client";
 import type { HistoryEntry, Logger, RecentlyPlayedItem } from "./types.js";
 
 export interface HistoryRepository {
-  addLiveTrack(input: { trackUri: string; trackName?: string | null; artistName?: string | null }): Promise<boolean>;
+  addLiveTrack(input: {
+    trackUri: string;
+    playedAtEpochMs: number;
+    trackName?: string | null;
+    artistName?: string | null;
+  }): Promise<boolean>;
   addBackfillItems(items: RecentlyPlayedItem[]): Promise<number>;
   getRecentEntries(limit: number): Promise<HistoryEntry[]>;
   close(): Promise<void>;
@@ -25,20 +30,42 @@ export class PrismaHistoryRepository implements HistoryRepository {
 
   public async addLiveTrack(input: {
     trackUri: string;
+    playedAtEpochMs: number;
     trackName?: string | null;
     artistName?: string | null;
   }): Promise<boolean> {
     const now = Date.now();
-    await this.prisma.playedTrack.create({
-      data: {
-        trackUri: input.trackUri,
-        trackName: input.trackName ?? null,
-        artistName: input.artistName ?? null,
-        playedAtEpochMs: BigInt(now),
-        source: PlayedTrackSource.LIVE,
-        observedAtEpochMs: BigInt(now),
-      },
-    });
+    try {
+      await this.prisma.playedTrack.create({
+        data: {
+          trackUri: input.trackUri,
+          trackName: input.trackName ?? null,
+          artistName: input.artistName ?? null,
+          playedAtEpochMs: BigInt(input.playedAtEpochMs),
+          source: PlayedTrackSource.LIVE,
+          observedAtEpochMs: BigInt(now),
+        },
+      });
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
+
+      await this.prisma.playedTrack.updateMany({
+        where: {
+          trackUri: input.trackUri,
+          playedAtEpochMs: BigInt(input.playedAtEpochMs),
+        },
+        data: {
+          trackName: input.trackName ?? null,
+          artistName: input.artistName ?? null,
+          source: PlayedTrackSource.LIVE,
+          observedAtEpochMs: BigInt(now),
+        },
+      });
+
+      return false;
+    }
 
     return true;
   }
@@ -135,4 +162,15 @@ function resolveDatabasePath(dbPath: string): string {
   }
 
   return path.resolve(process.cwd(), dbPath);
+}
+
+export function estimateLivePlayedAtEpochMs(input: {
+  fetchedAtEpochMs: number;
+  progressMs: number | null;
+}): number {
+  if (typeof input.progressMs !== "number" || Number.isNaN(input.progressMs)) {
+    return input.fetchedAtEpochMs;
+  }
+
+  return Math.max(0, input.fetchedAtEpochMs - Math.max(0, input.progressMs));
 }
