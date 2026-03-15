@@ -6,7 +6,11 @@ COPY package*.json ./
 RUN npm ci
 
 COPY tsconfig.json ./
+COPY prisma ./prisma
 COPY src ./src
+
+# Generate Prisma Client before building
+RUN npx prisma generate
 
 RUN npm run build
 
@@ -24,6 +28,8 @@ COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy backup scripts
 COPY scripts/backup-s3.sh ./scripts/
