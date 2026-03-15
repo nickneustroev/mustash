@@ -116,7 +116,7 @@ export class AuthManager {
     const redirectUrl = new URL(this.cfg.spotifyRedirectUri);
     const port = resolveListenPort(redirectUrl);
     const host = redirectUrl.hostname;
-    const listenHost = isLoopbackHost(host) ? host : "0.0.0.0";
+    const listenHost = "0.0.0.0";
     const callbackPath = redirectUrl.pathname;
 
     return new Promise((resolve, reject) => {

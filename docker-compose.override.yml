@@ -1,0 +1,4 @@
+services:
+  prisma-studio:
+    ports:
+      - "5555:5555"
