@@ -34,5 +34,7 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # Copy backup scripts
 COPY scripts/backup-s3.sh ./scripts/
 
+EXPOSE 3000
+
 # Default command runs the main app
 CMD ["node", "dist/main.js"]
