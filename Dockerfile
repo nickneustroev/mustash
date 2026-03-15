@@ -37,6 +37,7 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy backup scripts
 COPY scripts/backup-s3.sh ./scripts/
+COPY scripts/start-backup-cron.sh ./scripts/
 
 EXPOSE 3000
 
