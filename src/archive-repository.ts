@@ -26,16 +26,16 @@ export class PrismaArchiveRepository implements ArchiveRepository {
         trackUri: track.trackUri,
         trackName: track.trackName,
         artistName: track.artistName,
-        addedAtEpochMs: BigInt(track.addedAtEpochMs),
-        removedAtEpochMs: BigInt(track.removedAtEpochMs),
+        addedAt: track.addedAt,
+        removedAt: track.removedAt,
       },
       create: {
         trackId: track.trackId,
         trackUri: track.trackUri,
         trackName: track.trackName,
         artistName: track.artistName,
-        addedAtEpochMs: BigInt(track.addedAtEpochMs),
-        removedAtEpochMs: BigInt(track.removedAtEpochMs),
+        addedAt: track.addedAt,
+        removedAt: track.removedAt,
       },
     });
   }
@@ -54,8 +54,8 @@ export class PrismaArchiveRepository implements ArchiveRepository {
       trackUri: track.trackUri,
       trackName: track.trackName,
       artistName: track.artistName,
-      addedAtEpochMs: Number(track.addedAtEpochMs),
-      removedAtEpochMs: Number(track.removedAtEpochMs),
+      addedAt: track.addedAt,
+      removedAt: track.removedAt,
     };
   }
 
@@ -67,8 +67,8 @@ export class PrismaArchiveRepository implements ArchiveRepository {
       trackUri: track.trackUri,
       trackName: track.trackName,
       artistName: track.artistName,
-      addedAtEpochMs: Number(track.addedAtEpochMs),
-      removedAtEpochMs: Number(track.removedAtEpochMs),
+      addedAt: track.addedAt,
+      removedAt: track.removedAt,
     }));
   }
 

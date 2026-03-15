@@ -185,16 +185,16 @@ export class SpotifyClient {
 
     return payload.items
       .map((item) => {
-        const playedAt = item.played_at ? Date.parse(item.played_at) : NaN;
+        const playedAt = item.played_at ? new Date(item.played_at) : null;
         const uri = item.track?.uri ?? deriveUriFromTrackId(item.track?.id);
-        if (!uri || Number.isNaN(playedAt)) {
+        if (!uri || !playedAt || Number.isNaN(playedAt.getTime())) {
           return null;
         }
         return {
           trackUri: uri,
           trackName: item.track?.name ?? null,
           artistName: item.track?.artists?.[0]?.name ?? null,
-          playedAtEpochMs: playedAt,
+          playedAt,
         } satisfies RecentlyPlayedItem;
       })
       .filter((item): item is RecentlyPlayedItem => item !== null);
@@ -247,7 +247,7 @@ export class SpotifyClient {
         continue;
       }
 
-      const addedAt = item.added_at ? Date.parse(item.added_at) : Date.now();
+      const addedAt = item.added_at ? new Date(item.added_at) : new Date();
       const trackId = track.id;
       const trackUri = track.uri ?? deriveUriFromTrackId(trackId);
 
@@ -260,7 +260,7 @@ export class SpotifyClient {
         trackUri,
         trackName: track.name ?? null,
         artistName: track.artists?.[0]?.name ?? null,
-        addedAtEpochMs: addedAt,
+        addedAt,
       });
     }
 

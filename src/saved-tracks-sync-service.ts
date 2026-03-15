@@ -89,7 +89,7 @@ export class SavedTracksSyncService {
           if (
             dbTrack.trackName !== spotifyTrack.trackName ||
             dbTrack.artistName !== spotifyTrack.artistName ||
-            dbTrack.addedAtEpochMs !== spotifyTrack.addedAtEpochMs
+            dbTrack.addedAt.getTime() !== spotifyTrack.addedAt.getTime()
           ) {
             tracksToUpdate.push(spotifyTrack);
           }
@@ -134,7 +134,7 @@ export class SavedTracksSyncService {
     dbTracksMap: Map<string, SavedTrackItem>,
   ): Promise<number> {
     let removedCount = 0;
-    const now = Date.now();
+    const now = new Date();
 
     for (const trackId of removedTrackIds) {
       try {
@@ -156,8 +156,8 @@ export class SavedTracksSyncService {
             trackUri: track.trackUri,
             trackName: track.trackName,
             artistName: track.artistName,
-            addedAtEpochMs: track.addedAtEpochMs,
-            removedAtEpochMs: now,
+            addedAt: track.addedAt,
+            removedAt: now,
           };
           await this.archiveRepository.upsertArchivedTrack(archivedTrack);
         }

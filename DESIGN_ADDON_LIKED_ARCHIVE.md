@@ -11,8 +11,8 @@
 - `trackUri` - полный Spotify URI
 - `trackName` - название трека
 - `artistName` - имя основного исполнителя
-- `addedAtEpochMs` - timestamp добавления в избранное (когда был добавлен)
-- `removedAtEpochMs` - timestamp удаления из избранного (когда был архивирован)
+- `addedAt` - дата и время добавления в избранное
+- `removedAt` - дата и время удаления из избранного
 
 ## 3. Ожидаемое поведение
 
@@ -29,22 +29,22 @@
 
 ```prisma
 model ArchivedTrack {
-    trackId           String   @id
-    trackUri          String
-    trackName         String?
-    artistName        String?
-    addedAtEpochMs    BigInt   // Когда был добавлен в избранное
-    removedAtEpochMs  BigInt   // Когда был удален/архивирован
-    createdAt         DateTime @default(now())
+    trackId    String   @id
+    trackUri   String
+    trackName  String?
+    artistName String?
+    addedAt    DateTime
+    removedAt  DateTime
+    createdAt  DateTime @default(now())
 
     @@index([trackId])
-    @@index([removedAtEpochMs(sort: Desc)])
+    @@index([removedAt(sort: Desc)])
 }
 ```
 
 ### Индексы
 - `trackId` - для быстрого поиска конкретного трека
-- `removedAtEpochMs` - для сортировки по времени удаления
+- `removedAt` - для сортировки по времени удаления
 
 ## 5. Архитектура
 
@@ -57,8 +57,8 @@ export interface ArchivedTrackItem {
   trackUri: string;
   trackName: string | null;
   artistName: string | null;
-  addedAtEpochMs: number;
-  removedAtEpochMs: number;
+  addedAt: Date;
+  removedAt: Date;
 }
 ```
 
@@ -91,7 +91,7 @@ export interface ArchivedTrackItem {
   2. Если нет в архиве - получить полную информацию о треке из SavedTrack
   3. Создать запись в ArchivedTrack с:
      - Всеми метаданными трека
-     - `removedAtEpochMs` = текущий timestamp (время синхронизации)
+     - `removedAt` = текущее время синхронизации
   4. Удалить из SavedTrack
 
 ### 5.4 Поток данных
@@ -136,8 +136,8 @@ Saved tracks synced: Spotify=100, DB=102, new=0, updated=1, removed=2, archived=
 
 1. При удалении трека из избранного в Spotify, он автоматически появляется в архиве.
 2. В архиве сохраняются все метаданные трека.
-3. В архиве сохраняется timestamp добавления в избранное (`addedAtEpochMs`).
-4. В архиве сохраняется timestamp удаления (`removedAtEpochMs`).
+3. В архиве сохраняется дата добавления в избранное (`addedAt`).
+4. В архиве сохраняется дата удаления (`removedAt`).
 5. Повторное удаление того же трека игнорируется (он уже в архиве).
 6. Сервис стабильно работает при перезапусках.
 7. Ошибка архивирования не блокирует работу сервиса.

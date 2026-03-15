@@ -333,7 +333,7 @@
 - `trackUri` - полный Spotify URI
 - `trackName` - название трека
 - `artistName` - имя основного исполнителя
-- `addedAtEpochMs` - timestamp добавления в избранное
+- `addedAt` - дата и время добавления в избранное
 
 ### 15.3 Конфигурация
 

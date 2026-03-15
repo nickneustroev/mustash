@@ -171,6 +171,17 @@ docker-compose up -d app
 docker-compose logs -f app
 ```
 
+Если контейнер падает на `prisma migrate deploy` с `Error: P3009`, значит в примонтированной SQLite-базе осталась незавершённая старая миграция. Для текущей squashed-миграции это обычно выглядит как failed-запись `20260314075227_init_history` в `_prisma_migrations`.
+
+Исправление для локальной базы:
+
+```bash
+npx prisma migrate resolve --rolled-back 20260314075227_init_history
+docker-compose up -d app
+```
+
+Если данные в `./data/history.db` не нужны, проще удалить файл базы и запустить контейнер заново, чтобы Prisma создала чистую БД.
+
 Для Coolify не используй отдельный mount на файл токена. Храни токен внутри persistent storage директории, например:
 
 ```env
@@ -240,7 +251,7 @@ Backup работает по cron (по умолчанию в 00:00 UTC) и:
    - Новые лайки → добавляются в БД
    - Снятые лайки → удаляются из БД
    - Изменившиеся метаданные → обновляются
-4. Хранит: trackId, trackUri, trackName, artistName, addedAtEpochMs.
+4. Хранит: trackId, trackUri, trackName, artistName, addedAt.
 5. Включается через `SAVED_TRACKS_ENABLED=true`.
 
 ## Документация

@@ -8,7 +8,7 @@ import { TrackWatcher } from "./track-watcher.js";
 import { BackfillService } from "./backfill-service.js";
 import {
   createPrismaClient,
-  estimateLivePlayedAtEpochMs,
+  estimateLivePlayedAt,
   PrismaHistoryRepository,
 } from "./history-repository.js";
 import { PrismaSavedTrackRepository } from "./saved-track-repository.js";
@@ -40,22 +40,22 @@ async function main(): Promise<void> {
       if (!snapshot.trackUri) {
         return;
       }
-      const playedAtEpochMs = estimateLivePlayedAtEpochMs({
+      const playedAt = estimateLivePlayedAt({
         fetchedAtEpochMs: snapshot.fetchedAtEpochMs,
         progressMs: snapshot.progressMs,
       });
 
       const inserted = await historyRepository.addLiveTrack({
         trackUri: snapshot.trackUri,
-        playedAtEpochMs,
+        playedAt,
         trackName: snapshot.trackName,
         artistName: snapshot.artists[0] ?? null,
       });
 
       logger.info(
         inserted
-          ? `Live track saved: ${snapshot.trackUri} at ${playedAtEpochMs}.`
-          : `Live track already exists, refreshed metadata: ${snapshot.trackUri} at ${playedAtEpochMs}.`,
+          ? `Live track saved: ${snapshot.trackUri} at ${playedAt.toISOString()}.`
+          : `Live track already exists, refreshed metadata: ${snapshot.trackUri} at ${playedAt.toISOString()}.`,
       );
     },
   });

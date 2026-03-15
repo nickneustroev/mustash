@@ -61,15 +61,15 @@ I --> J[Basic Auth + IP allowlist]
 Поля:
 - id String @id @default(cuid())
 - trackUri String
-- playedAtEpochMs BigInt
+- playedAt DateTime
 - source enum LIVE or BACKFILL
-- observedAtEpochMs BigInt
+- observedAt DateTime
 - createdAt DateTime @default(now())
 
 Индексы:
-- playedAtEpochMs для быстрых выборок последних N.
-- trackUri + playedAtEpochMs для отчетов и поиска.
-- unique trackUri + playedAtEpochMs + source для идемпотентности.
+- playedAt для быстрых выборок последних N.
+- trackUri + playedAt для отчетов и поиска.
+- unique trackUri + playedAt для идемпотентности.
 
 ### 5.2 Модель AppState
 

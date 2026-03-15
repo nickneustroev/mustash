@@ -7,7 +7,7 @@ import type { HistoryEntry, Logger, RecentlyPlayedItem } from "./types.js";
 export interface HistoryRepository {
   addLiveTrack(input: {
     trackUri: string;
-    playedAtEpochMs: number;
+    playedAt: Date;
     trackName?: string | null;
     artistName?: string | null;
   }): Promise<boolean>;
@@ -30,20 +30,20 @@ export class PrismaHistoryRepository implements HistoryRepository {
 
   public async addLiveTrack(input: {
     trackUri: string;
-    playedAtEpochMs: number;
+    playedAt: Date;
     trackName?: string | null;
     artistName?: string | null;
   }): Promise<boolean> {
-    const now = Date.now();
+    const now = new Date();
     try {
       await this.prisma.playedTrack.create({
         data: {
           trackUri: input.trackUri,
           trackName: input.trackName ?? null,
           artistName: input.artistName ?? null,
-          playedAtEpochMs: BigInt(input.playedAtEpochMs),
+          playedAt: input.playedAt,
           source: PlayedTrackSource.LIVE,
-          observedAtEpochMs: BigInt(now),
+          observedAt: now,
         },
       });
     } catch (error) {
@@ -54,13 +54,13 @@ export class PrismaHistoryRepository implements HistoryRepository {
       await this.prisma.playedTrack.updateMany({
         where: {
           trackUri: input.trackUri,
-          playedAtEpochMs: BigInt(input.playedAtEpochMs),
+          playedAt: input.playedAt,
         },
         data: {
           trackName: input.trackName ?? null,
           artistName: input.artistName ?? null,
           source: PlayedTrackSource.LIVE,
-          observedAtEpochMs: BigInt(now),
+          observedAt: now,
         },
       });
 
@@ -75,8 +75,8 @@ export class PrismaHistoryRepository implements HistoryRepository {
       return 0;
     }
 
-    const observedAtEpochMs = BigInt(Date.now());
-    const sorted = [...items].sort((a, b) => a.playedAtEpochMs - b.playedAtEpochMs);
+    const observedAt = new Date();
+    const sorted = [...items].sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime());
 
     let inserted = 0;
 
@@ -87,9 +87,9 @@ export class PrismaHistoryRepository implements HistoryRepository {
             trackUri: item.trackUri,
             trackName: item.trackName ?? null,
             artistName: item.artistName ?? null,
-            playedAtEpochMs: BigInt(item.playedAtEpochMs),
+            playedAt: item.playedAt,
             source: PlayedTrackSource.BACKFILL,
-            observedAtEpochMs,
+            observedAt,
           },
         });
         inserted += 1;
@@ -105,7 +105,7 @@ export class PrismaHistoryRepository implements HistoryRepository {
 
   public async getRecentEntries(limit: number): Promise<HistoryEntry[]> {
     const events = await this.prisma.playedTrack.findMany({
-      orderBy: { playedAtEpochMs: "desc" },
+      orderBy: { playedAt: "desc" },
       take: Math.max(1, limit),
     });
 
@@ -113,7 +113,7 @@ export class PrismaHistoryRepository implements HistoryRepository {
       trackUri: event.trackUri,
       trackName: event.trackName,
       artistName: event.artistName,
-      playedAtEpochMs: Number(event.playedAtEpochMs),
+      playedAt: event.playedAt,
       source: event.source === PlayedTrackSource.BACKFILL ? "backfill" : "live",
     }));
   }
@@ -164,13 +164,13 @@ function resolveDatabasePath(dbPath: string): string {
   return path.resolve(process.cwd(), dbPath);
 }
 
-export function estimateLivePlayedAtEpochMs(input: {
+export function estimateLivePlayedAt(input: {
   fetchedAtEpochMs: number;
   progressMs: number | null;
-}): number {
+}): Date {
   if (typeof input.progressMs !== "number" || Number.isNaN(input.progressMs)) {
-    return input.fetchedAtEpochMs;
+    return new Date(input.fetchedAtEpochMs);
   }
 
-  return Math.max(0, input.fetchedAtEpochMs - Math.max(0, input.progressMs));
+  return new Date(Math.max(0, input.fetchedAtEpochMs - Math.max(0, input.progressMs)));
 }

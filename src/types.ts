@@ -29,7 +29,7 @@ export interface HistoryEntry {
   trackUri: string;
   trackName: string | null;
   artistName: string | null;
-  playedAtEpochMs: number;
+  playedAt: Date;
   source: HistorySource;
 }
 
@@ -37,7 +37,7 @@ export interface RecentlyPlayedItem {
   trackUri: string;
   trackName: string | null;
   artistName: string | null;
-  playedAtEpochMs: number;
+  playedAt: Date;
 }
 
 export interface SavedTrackItem {
@@ -45,7 +45,7 @@ export interface SavedTrackItem {
   trackUri: string;
   trackName: string | null;
   artistName: string | null;
-  addedAtEpochMs: number;
+  addedAt: Date;
 }
 
 export interface ArchivedTrackItem {
@@ -53,6 +53,6 @@ export interface ArchivedTrackItem {
   trackUri: string;
   trackName: string | null;
   artistName: string | null;
-  addedAtEpochMs: number;
-  removedAtEpochMs: number;
+  addedAt: Date;
+  removedAt: Date;
 }

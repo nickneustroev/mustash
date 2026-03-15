@@ -12,18 +12,18 @@ enum PlayedTrackSource {
 }
 
 model PlayedTrack {
-    id                String            @id @default(cuid())
-    trackUri          String
-    trackName         String?
-    artistName        String?
-    playedAtEpochMs   BigInt
-    source            PlayedTrackSource
-    observedAtEpochMs BigInt
-    createdAt         DateTime          @default(now())
+    id         String            @id @default(cuid())
+    trackUri   String
+    trackName  String?
+    artistName String?
+    playedAt   DateTime
+    source     PlayedTrackSource
+    observedAt DateTime
+    createdAt  DateTime          @default(now())
 
-    @@unique([trackUri, playedAtEpochMs])
-    @@index([playedAtEpochMs(sort: Desc)])
-    @@index([trackUri, playedAtEpochMs])
+    @@unique([trackUri, playedAt])
+    @@index([playedAt(sort: Desc)])
+    @@index([trackUri, playedAt])
 }
 
 model AppState {
@@ -37,21 +37,21 @@ model SavedTrack {
     trackUri       String   @unique
     trackName      String?
     artistName     String?
-    addedAtEpochMs BigInt
+    addedAt        DateTime
     updatedAt      DateTime @updatedAt
 
     @@index([trackId])
 }
 
 model ArchivedTrack {
-    trackId          String   @id
-    trackUri         String
-    trackName        String?
-    artistName       String?
-    addedAtEpochMs   BigInt
-    removedAtEpochMs BigInt
-    createdAt        DateTime @default(now())
+    trackId    String   @id
+    trackUri   String
+    trackName  String?
+    artistName String?
+    addedAt    DateTime
+    removedAt  DateTime
+    createdAt  DateTime @default(now())
 
     @@index([trackId])
-    @@index([removedAtEpochMs(sort: Desc)])
+    @@index([removedAt(sort: Desc)])
 }

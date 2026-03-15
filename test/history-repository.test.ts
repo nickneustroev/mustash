@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  estimateLivePlayedAtEpochMs,
+  estimateLivePlayedAt,
   PrismaHistoryRepository,
 } from "../src/history-repository.js";
 import type { Logger } from "../src/types.js";
@@ -14,19 +14,19 @@ const log: Logger = {
 describe("PrismaHistoryRepository", () => {
   it("uses estimated playback start for live events", () => {
     expect(
-      estimateLivePlayedAtEpochMs({
+      estimateLivePlayedAt({
         fetchedAtEpochMs: 1_000,
         progressMs: 250,
-      }),
+      }).getTime(),
     ).toBe(750);
   });
 
   it("falls back to fetch time when progress is missing", () => {
     expect(
-      estimateLivePlayedAtEpochMs({
+      estimateLivePlayedAt({
         fetchedAtEpochMs: 1_000,
         progressMs: null,
-      }),
+      }).getTime(),
     ).toBe(1_000);
   });
 
@@ -43,7 +43,7 @@ describe("PrismaHistoryRepository", () => {
     await expect(
       repository.addLiveTrack({
         trackUri: "spotify:track:test",
-        playedAtEpochMs: 1_000,
+        playedAt: new Date(1_000),
       }),
     ).resolves.toBe(false);
 

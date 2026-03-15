@@ -66,14 +66,14 @@ describe("SavedTracksSyncService", () => {
           trackUri: "spotify:track:track1",
           trackName: "Track 1",
           artistName: "Artist 1",
-          addedAtEpochMs: 1000,
+          addedAt: new Date(1000),
         },
         {
           trackId: "track2",
           trackUri: "spotify:track:track2",
           trackName: "Track 2",
           artistName: "Artist 2",
-          addedAtEpochMs: 2000,
+          addedAt: new Date(2000),
         },
       ];
 
@@ -113,7 +113,7 @@ describe("SavedTracksSyncService", () => {
           trackUri: "spotify:track:track1",
           trackName: "Track 1",
           artistName: "Artist 1",
-          addedAtEpochMs: 1000,
+          addedAt: new Date(1000),
         },
       ];
 
@@ -128,7 +128,7 @@ describe("SavedTracksSyncService", () => {
           trackUri: "spotify:track:track1",
           trackName: "Track 1",
           artistName: "Artist 1",
-          addedAtEpochMs: 1000,
+          addedAt: new Date(1000),
         },
       ]);
       (mockRepository.upsertSavedTracks as ReturnType<typeof vi.fn>).mockResolvedValue(0);
@@ -161,7 +161,7 @@ describe("SavedTracksSyncService", () => {
           trackUri: "spotify:track:track1",
           trackName: "Updated Track Name",
           artistName: "Updated Artist",
-          addedAtEpochMs: 2000,
+          addedAt: new Date(2000),
         },
       ];
 
@@ -171,7 +171,7 @@ describe("SavedTracksSyncService", () => {
           trackUri: "spotify:track:track1",
           trackName: "Old Track Name",
           artistName: "Old Artist",
-          addedAtEpochMs: 1000,
+          addedAt: new Date(1000),
         },
       ];
 

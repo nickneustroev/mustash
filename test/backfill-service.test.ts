@@ -14,7 +14,7 @@ describe("BackfillService", () => {
   it("writes backfill items into repository when history changed", async () => {
     const getRecentlyPlayed = vi
       .fn()
-      .mockResolvedValue([{ trackUri: "spotify:track:a", playedAtEpochMs: 1 }]);
+      .mockResolvedValue([{ trackUri: "spotify:track:a", playedAt: new Date(1) }]);
     const addBackfillItems = vi.fn().mockResolvedValue(1);
 
     const spotifyClient = {

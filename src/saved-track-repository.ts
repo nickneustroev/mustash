@@ -34,14 +34,14 @@ export class PrismaSavedTrackRepository implements SavedTrackRepository {
         trackUri: track.trackUri,
         trackName: track.trackName,
         artistName: track.artistName,
-        addedAtEpochMs: BigInt(track.addedAtEpochMs),
+        addedAt: track.addedAt,
       },
       create: {
         trackId: track.trackId,
         trackUri: track.trackUri,
         trackName: track.trackName,
         artistName: track.artistName,
-        addedAtEpochMs: BigInt(track.addedAtEpochMs),
+        addedAt: track.addedAt,
       },
     });
   }
@@ -106,7 +106,7 @@ export class PrismaSavedTrackRepository implements SavedTrackRepository {
       trackUri: track.trackUri,
       trackName: track.trackName,
       artistName: track.artistName,
-      addedAtEpochMs: Number(track.addedAtEpochMs),
+      addedAt: track.addedAt,
     }));
   }
 

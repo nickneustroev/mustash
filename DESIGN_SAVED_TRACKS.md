@@ -11,7 +11,7 @@
 - `trackUri` - полный Spotify URI
 - `trackName` - название трека
 - `artistName` - имя основного исполнителя
-- `addedAtEpochMs` - timestamp добавления в избранное
+- `addedAt` - дата и время добавления в избранное
 
 ## 3. Ожидаемое поведение
 
@@ -35,12 +35,12 @@
 
 ```prisma
 model SavedTrack {
-  trackId        String   @id
-  trackUri       String   @unique
-  trackName      String?
-  artistName     String?
-  addedAtEpochMs BigInt
-  updatedAt      DateTime @updatedAt
+  trackId    String   @id
+  trackUri   String   @unique
+  trackName  String?
+  artistName String?
+  addedAt    DateTime
+  updatedAt  DateTime @updatedAt
 
   @@index([trackId])
 }
