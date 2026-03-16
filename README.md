@@ -149,7 +149,7 @@ BACKUP_RETENTION_DAYS=7
 ## Команды
 
 1. `npm run dev` - запуск в режиме разработки.
-2. `npm run build` - сборка TypeScript в `dist/`.
+2. `npm run build` - сборка TypeScript в `apps/tracker/dist/`.
 3. `npm run start` - запуск собранного приложения.
 4. `npm test` - запуск unit-тестов.
 5. `npm run lint` - проверка линтером.

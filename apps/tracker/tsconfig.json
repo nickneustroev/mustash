@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "rootDir": "apps/tracker/src",
+    "rootDir": "src",
     "outDir": "dist",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -17,6 +17,6 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["apps/tracker/src"],
+  "include": ["src"],
   "exclude": ["dist", "node_modules"]
 }

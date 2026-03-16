@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY package*.json ./
 RUN npm ci
 
-COPY tsconfig.json ./
+COPY apps/tracker/tsconfig.json ./apps/tracker/tsconfig.json
 COPY prisma.config.ts ./
 COPY prisma ./prisma
 COPY apps/tracker/src ./apps/tracker/src
@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/tracker/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/node_modules ./node_modules

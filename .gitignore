@@ -1,5 +1,5 @@
 node_modules/
-dist/
+apps/tracker/dist/
 .env
 .spotify-tokens.json
 .history-state.json
