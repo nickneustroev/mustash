@@ -1,4 +1,4 @@
-import type { PlaybackSnapshot } from "./types.js";
+import type { PlaybackSnapshot } from "../shared/types.js";
 
 export interface TrackDecisionState {
   initialized: boolean;

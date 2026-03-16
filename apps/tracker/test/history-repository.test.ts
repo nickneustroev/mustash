@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   estimateLivePlayedAt,
   PrismaHistoryRepository,
-} from "../src/history-repository.js";
-import type { Logger } from "../src/types.js";
+} from "../src/persistence/history-repository.js";
+import type { Logger } from "../src/shared/types.js";
 
 const log: Logger = {
   info: vi.fn(),

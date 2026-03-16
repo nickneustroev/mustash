@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { SavedTracksSyncService } from "../src/saved-tracks-sync-service.js";
-import type { SavedTrackItem, Logger, ArchivedTrackItem } from "../src/types.js";
-import type { SpotifyClient } from "../src/spotify-client.js";
-import type { SavedTrackRepository } from "../src/saved-track-repository.js";
-import type { ArchiveRepository } from "../src/archive-repository.js";
+import { SavedTracksSyncService } from "../src/features/saved-tracks/saved-tracks-sync-service.js";
+import type { SavedTrackItem, Logger, ArchivedTrackItem } from "../src/shared/types.js";
+import type { SpotifyClient } from "../src/spotify/spotify-client.js";
+import type { SavedTrackRepository } from "../src/persistence/saved-track-repository.js";
+import type { ArchiveRepository } from "../src/persistence/archive-repository.js";
 
 describe("SavedTracksSyncService", () => {
   let mockSpotifyClient: SpotifyClient;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLikedRecentWindows } from "../src/config.js";
+import { parseLikedRecentWindows } from "../src/core/config.js";
 
 describe("parseLikedRecentWindows", () => {
   it("parses, deduplicates and sorts windows", () => {

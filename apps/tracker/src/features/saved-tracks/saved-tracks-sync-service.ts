@@ -1,8 +1,8 @@
-import { SpotifyRateLimitError } from "./errors.js";
-import type { Logger, SavedTrackItem, ArchivedTrackItem } from "./types.js";
-import type { SpotifyClient } from "./spotify-client.js";
-import type { SavedTrackRepository } from "./saved-track-repository.js";
-import type { ArchiveRepository } from "./archive-repository.js";
+import { SpotifyRateLimitError } from "../../shared/errors.js";
+import type { Logger, SavedTrackItem, ArchivedTrackItem } from "../../shared/types.js";
+import type { SpotifyClient } from "../../spotify/spotify-client.js";
+import type { SavedTrackRepository } from "../../persistence/saved-track-repository.js";
+import type { ArchiveRepository } from "../../persistence/archive-repository.js";
 
 export interface SavedTracksSyncOptions {
   syncIntervalMs: number;

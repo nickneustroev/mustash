@@ -1,7 +1,9 @@
 import type { AuthManager } from "./auth-manager.js";
-import type { AppConfig } from "./config.js";
-import { SpotifyRateLimitError } from "./errors.js";
-import type { Logger, PlaybackSnapshot, RecentlyPlayedItem, SavedTrackItem } from "./types.js";
+import type { AppConfig } from "../core/config.js";
+import { SpotifyRateLimitError } from "../shared/errors.js";
+import { Inject, Injectable, Optional } from "@nestjs/common";
+import { APP_CONFIG, APP_LOGGER, AUTH_MANAGER, FETCH_IMPL } from "../core/nest.tokens.js";
+import type { Logger, PlaybackSnapshot, RecentlyPlayedItem, SavedTrackItem } from "../shared/types.js";
 import { ProxyAgent } from "undici";
 
 interface SpotifyArtist {
@@ -53,15 +55,16 @@ interface SpotifySavedTracksPage {
 
 type TransportMode = "direct" | "proxy";
 
+@Injectable()
 export class SpotifyClient {
   private readonly proxyDispatcher: unknown | null;
   private transportMode: TransportMode;
 
   constructor(
-    private readonly auth: AuthManager,
-    private readonly cfg: AppConfig,
-    private readonly log: Logger,
-    private readonly fetchImpl: typeof fetch = fetch,
+    @Inject(AUTH_MANAGER) private readonly auth: AuthManager,
+    @Inject(APP_CONFIG) private readonly cfg: AppConfig,
+    @Inject(APP_LOGGER) private readonly log: Logger,
+    @Optional() @Inject(FETCH_IMPL) private readonly fetchImpl: typeof fetch = fetch,
   ) {
     this.proxyDispatcher = cfg.spotifyProxyUrl ? new ProxyAgent(cfg.spotifyProxyUrl) : null;
     this.transportMode = this.shouldStartWithProxy() ? "proxy" : "direct";

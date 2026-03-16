@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { Inject, Injectable } from "@nestjs/common";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
-import type { Logger, SavedTrackItem } from "./types.js";
+import { APP_LOGGER, PRISMA_CLIENT } from "../core/nest.tokens.js";
+import type { Logger, SavedTrackItem } from "../shared/types.js";
 
 export interface SavedTrackRepository {
   upsertSavedTrack(track: SavedTrackItem): Promise<void>;
@@ -21,10 +23,11 @@ export function createPrismaClient(databaseUrl: string): PrismaClient {
   return new PrismaClient({ adapter });
 }
 
+@Injectable()
 export class PrismaSavedTrackRepository implements SavedTrackRepository {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly logger: Logger,
+    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
+    @Inject(APP_LOGGER) private readonly logger: Logger,
   ) {}
 
   public async upsertSavedTrack(track: SavedTrackItem): Promise<void> {

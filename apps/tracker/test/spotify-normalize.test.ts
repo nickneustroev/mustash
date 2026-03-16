@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { normalizeCurrentlyPlaying } from "../src/spotify-client.js";
+import { normalizeCurrentlyPlaying } from "../src/spotify/spotify-client.js";
 
 describe("normalizeCurrentlyPlaying", () => {
   afterEach(() => {

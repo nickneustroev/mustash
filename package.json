@@ -6,24 +6,28 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch apps/tracker/src/main.ts",
+    "dev": "tsx watch apps/tracker/src/core/main.ts",
     "build": "tsc -p apps/tracker/tsconfig.json",
-    "start": "node apps/tracker/dist/main.js",
-    "start:docker": "prisma migrate deploy && node apps/tracker/dist/main.js",
+    "start": "node apps/tracker/dist/core/main.js",
+    "start:docker": "prisma migrate deploy && node apps/tracker/dist/core/main.js",
     "test": "vitest run --config apps/tracker/vitest.config.ts",
     "test:watch": "vitest --config apps/tracker/vitest.config.ts",
     "lint": "eslint . --config apps/tracker/eslint.config.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio --port 5555",
-    "backup": "tsx apps/tracker/src/backup-s3.ts"
+    "backup": "tsx apps/tracker/src/backup/backup-s3.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
     "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "better-sqlite3": "^11.10.0",
     "dotenv": "^17.2.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
     "sharp": "^0.34.5",
     "undici": "^7.24.0",
     "zod": "^4.1.12"

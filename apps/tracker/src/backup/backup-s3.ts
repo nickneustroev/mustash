@@ -2,8 +2,8 @@ import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand }
 import { createReadStream, createWriteStream, statSync, unlinkSync, readdirSync } from "node:fs";
 import { join, basename } from "node:path";
 import { pipeline } from "node:stream/promises";
-import { loadConfig } from "./config.js";
-import { logger } from "./logger.js";
+import { loadConfig } from "../core/config.js";
+import { logger } from "../core/logger.js";
 
 interface BackupOptions {
   dryRun?: boolean;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateBackoffDelayMs } from "../src/track-watcher.js";
+import { calculateBackoffDelayMs } from "../src/runtime/track-watcher.js";
 
 describe("calculateBackoffDelayMs", () => {
   it("uses retry-after when greater than poll interval", () => {

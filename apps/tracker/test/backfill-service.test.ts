@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { BackfillService } from "../src/backfill-service.js";
-import type { Logger } from "../src/types.js";
-import type { SpotifyClient } from "../src/spotify-client.js";
-import type { HistoryRepository } from "../src/history-repository.js";
+import { BackfillService } from "../src/runtime/backfill-service.js";
+import type { Logger } from "../src/shared/types.js";
+import type { SpotifyClient } from "../src/spotify/spotify-client.js";
+import type { HistoryRepository } from "../src/persistence/history-repository.js";
 
 const log: Logger = {
   info: vi.fn(),

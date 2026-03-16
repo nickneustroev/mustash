@@ -3,9 +3,9 @@ import {
   buildLikedRecentPlaylistName,
   hashUris,
   LikedRecentSyncService,
-} from "../src/liked-recent-sync-service.js";
-import type { Logger } from "../src/types.js";
-import type { SpotifyClient } from "../src/spotify-client.js";
+} from "../src/features/liked-recent/liked-recent-sync-service.js";
+import type { Logger } from "../src/shared/types.js";
+import type { SpotifyClient } from "../src/spotify/spotify-client.js";
 
 const log: Logger = {
   info: vi.fn(),

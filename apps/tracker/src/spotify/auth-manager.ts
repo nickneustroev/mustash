@@ -4,8 +4,10 @@ import http from "node:http";
 import path from "node:path";
 import { URL } from "node:url";
 import { exec } from "node:child_process";
-import type { AppConfig } from "./config.js";
-import type { Logger, OAuthTokens } from "./types.js";
+import { Inject, Injectable, Optional } from "@nestjs/common";
+import type { AppConfig } from "../core/config.js";
+import { APP_CONFIG, APP_LOGGER, FETCH_IMPL } from "../core/nest.tokens.js";
+import type { Logger, OAuthTokens } from "../shared/types.js";
 
 interface SpotifyTokenResponse {
   access_token: string;
@@ -15,13 +17,14 @@ interface SpotifyTokenResponse {
   refresh_token?: string;
 }
 
+@Injectable()
 export class AuthManager {
   private tokens: OAuthTokens | null = null;
 
   constructor(
-    private readonly cfg: AppConfig,
-    private readonly log: Logger,
-    private readonly fetchImpl: typeof fetch = fetch,
+    @Inject(APP_CONFIG) private readonly cfg: AppConfig,
+    @Inject(APP_LOGGER) private readonly log: Logger,
+    @Optional() @Inject(FETCH_IMPL) private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
   public async initialize(): Promise<void> {

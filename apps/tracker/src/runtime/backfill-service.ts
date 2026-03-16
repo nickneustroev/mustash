@@ -1,7 +1,7 @@
-import { SpotifyRateLimitError } from "./errors.js";
-import type { Logger } from "./types.js";
-import type { SpotifyClient } from "./spotify-client.js";
-import type { HistoryRepository } from "./history-repository.js";
+import { SpotifyRateLimitError } from "../shared/errors.js";
+import type { Logger } from "../shared/types.js";
+import type { SpotifyClient } from "../spotify/spotify-client.js";
+import type { HistoryRepository } from "../persistence/history-repository.js";
 
 interface BackfillOptions {
   intervalMs: number;

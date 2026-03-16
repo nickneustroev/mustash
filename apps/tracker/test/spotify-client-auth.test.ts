@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { SpotifyClient } from "../src/spotify-client.js";
-import type { AuthManager } from "../src/auth-manager.js";
-import type { AppConfig } from "../src/config.js";
-import type { Logger } from "../src/types.js";
+import { SpotifyClient } from "../src/spotify/spotify-client.js";
+import type { AuthManager } from "../src/spotify/auth-manager.js";
+import type { AppConfig } from "../src/core/config.js";
+import type { Logger } from "../src/shared/types.js";
 
 function createConfig(): AppConfig {
   return {

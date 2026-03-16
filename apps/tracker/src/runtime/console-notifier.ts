@@ -1,4 +1,4 @@
-import type { Logger, PlaybackSnapshot } from "./types.js";
+import type { Logger, PlaybackSnapshot } from "../shared/types.js";
 
 export class ConsoleNotifier {
   constructor(private readonly log: Logger) {}

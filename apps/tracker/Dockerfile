@@ -38,4 +38,4 @@ COPY --from=builder /root/.cache/prisma /root/.cache/prisma
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/core/main.js"]

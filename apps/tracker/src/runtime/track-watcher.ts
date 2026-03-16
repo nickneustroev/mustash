@@ -1,7 +1,7 @@
-import { SpotifyRateLimitError } from "./errors.js";
+import { SpotifyRateLimitError } from "../shared/errors.js";
 import { decideTrackEvent, type TrackDecisionState } from "./track-decision.js";
-import type { Logger, PlaybackSnapshot } from "./types.js";
-import type { SpotifyClient } from "./spotify-client.js";
+import type { Logger, PlaybackSnapshot } from "../shared/types.js";
+import type { SpotifyClient } from "../spotify/spotify-client.js";
 import type { ConsoleNotifier } from "./console-notifier.js";
 
 interface TrackWatcherOptions {

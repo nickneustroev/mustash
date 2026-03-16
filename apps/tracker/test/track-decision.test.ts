@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { decideTrackEvent, type TrackDecisionState } from "../src/track-decision.js";
-import type { PlaybackSnapshot } from "../src/types.js";
+import { decideTrackEvent, type TrackDecisionState } from "../src/runtime/track-decision.js";
+import type { PlaybackSnapshot } from "../src/shared/types.js";
 
 function trackSnapshot(trackId: string, isPlaying = true): PlaybackSnapshot {
   return {

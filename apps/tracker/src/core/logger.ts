@@ -1,4 +1,4 @@
-import type { Logger } from "./types.js";
+import type { Logger } from "../shared/types.js";
 
 const ts = () => new Date().toISOString();
 

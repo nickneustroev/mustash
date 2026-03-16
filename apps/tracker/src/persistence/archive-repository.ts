@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import { Inject, Injectable } from "@nestjs/common";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
-import type { Logger, ArchivedTrackItem } from "./types.js";
+import { APP_LOGGER, PRISMA_CLIENT } from "../core/nest.tokens.js";
+import type { Logger, ArchivedTrackItem } from "../shared/types.js";
 
 export interface ArchiveRepository {
   upsertArchivedTrack(track: ArchivedTrackItem): Promise<void>;
@@ -13,10 +15,11 @@ export interface ArchiveRepository {
   close(): Promise<void>;
 }
 
+@Injectable()
 export class PrismaArchiveRepository implements ArchiveRepository {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly logger: Logger,
+    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
+    @Inject(APP_LOGGER) private readonly logger: Logger,
   ) {}
 
   public async upsertArchivedTrack(track: ArchivedTrackItem): Promise<void> {
