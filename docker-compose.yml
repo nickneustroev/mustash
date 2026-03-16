@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: spotify-helper
+    container_name: spotify-helper-app
     env_file:
       - .env
     environment:
@@ -14,18 +14,17 @@ services:
       - ./data:/app/data
     restart: unless-stopped
 
-  backup:
+  backup-cron:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: spotify-helper-backup
+      dockerfile: Dockerfile.backup
+    container_name: spotify-helper-backup-cron
     env_file:
       - .env
     environment:
       DATABASE_URL: file:/app/data/history.db
     volumes:
       - ./data:/app/data
-    entrypoint: ["/bin/bash", "/app/scripts/start-backup-cron.sh"]
     restart: unless-stopped
 
   prisma-studio:
