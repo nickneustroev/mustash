@@ -1,4 +1,0 @@
-# Backup cron - daily at 00:00 UTC
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-0 0 * * * set -a; . /tmp/backup-cron.env; set +a; cd /app && /bin/bash /app/scripts/backup-s3.sh >> /var/log/backup.log 2>&1
