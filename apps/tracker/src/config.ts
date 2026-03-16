@@ -14,7 +14,7 @@ const schema = z.object({
     .optional()
     .transform((v) => v === "true")
     .default(true),
-  TOKEN_STORAGE_PATH: z.string().default(".spotify-tokens.json"),
+  TOKEN_STORAGE_PATH: z.string().default("data/.spotify-tokens.json"),
   DATABASE_URL: z.string().min(1).default("file:./dev.db"),
   BACKFILL_INTERVAL_MS: z.coerce.number().int().min(5000).default(60000),
   BACKFILL_LIMIT: z.coerce.number().int().min(1).max(50).default(50),
