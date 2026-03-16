@@ -1,0 +1,10 @@
+{
+  "name": "spotify-helper-backup-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.744.0",
+    "dotenv": "^17.2.3",
+    "zod": "^4.1.12"
+  }
+}

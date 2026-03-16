@@ -21,21 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cron \
     && rm -rf /var/lib/apt/lists/*
 
-RUN set -eux; \
-    cat > package.json <<'EOF'
-{
-  "name": "spotify-helper-backup-runtime",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.744.0",
-    "dotenv": "^17.2.3",
-    "zod": "^4.1.12"
-  }
-}
-EOF
-
-RUN npm install --omit=dev --no-package-lock && npm cache clean --force
+COPY apps/backup/package.json ./package.json
+COPY apps/backup/package-lock.json ./package-lock.json
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist/backup-s3.js ./dist/backup-s3.js
 COPY --from=builder /app/dist/config.js ./dist/config.js

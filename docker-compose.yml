@@ -1,9 +1,9 @@
 services:
-  app:
+  tracker:
     build:
       context: .
       dockerfile: apps/tracker/Dockerfile
-    container_name: spotify-helper-app
+    container_name: spotify-helper-tracker
     env_file:
       - .env
     environment:

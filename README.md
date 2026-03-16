@@ -163,11 +163,13 @@ BACKUP_RETENTION_DAYS=7
 
 ```bash
 # Сборка и запуск
-docker-compose up -d app
+docker-compose up -d tracker
 
 # Просмотр логов
-docker-compose logs -f app
+docker-compose logs -f tracker
 ```
+
+Примечание: warning вида `The "autKTE" variable is not set` в `docker compose` ожидаем и игнорируем. Это намеренная конфигурация для обхода бага Coolify в обработке `basicauth`-label.
 
 Если контейнер падает на `prisma migrate deploy` с `Error: P3009`, значит в примонтированной SQLite-базе осталась незавершённая старая миграция. Для текущей squashed-миграции это обычно выглядит как failed-запись `20260314075227_init_history` в `_prisma_migrations`.
 
@@ -175,7 +177,7 @@ docker-compose logs -f app
 
 ```bash
 npx prisma migrate resolve --rolled-back 20260314075227_init_history
-docker-compose up -d app
+docker-compose up -d tracker
 ```
 
 Если данные в `./data/history.db` не нужны, проще удалить файл базы и запустить контейнер заново, чтобы Prisma создала чистую БД.

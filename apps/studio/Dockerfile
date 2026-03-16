@@ -6,19 +6,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN set -eux; \
-    cat > package.json <<'EOF'
-{
-  "name": "spotify-helper-prisma-studio-runtime",
-  "private": true,
-  "dependencies": {
-    "@prisma/client": "^7.5.0",
-    "prisma": "^7.5.0"
-  }
-}
-EOF
-
-RUN npm install --omit=dev --no-package-lock && npm cache clean --force
+COPY apps/studio/package.json ./package.json
+COPY apps/studio/package-lock.json ./package-lock.json
+RUN npm ci --omit=dev && npm cache clean --force
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
