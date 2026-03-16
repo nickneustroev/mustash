@@ -8,7 +8,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY prisma.config.ts ./
 COPY prisma ./prisma
-COPY src ./src
+COPY apps/tracker/src ./apps/tracker/src
 RUN npx prisma generate
 RUN npm run build
 
@@ -40,7 +40,7 @@ RUN npm install --omit=dev --no-package-lock && npm cache clean --force
 COPY --from=builder /app/dist/backup-s3.js ./dist/backup-s3.js
 COPY --from=builder /app/dist/config.js ./dist/config.js
 COPY --from=builder /app/dist/logger.js ./dist/logger.js
-COPY scripts/backup-s3.sh ./scripts/backup-s3.sh
-COPY scripts/start-backup-cron.sh ./scripts/start-backup-cron.sh
+COPY apps/backup/scripts/backup-s3.sh ./scripts/backup-s3.sh
+COPY apps/backup/scripts/start-backup-cron.sh ./scripts/start-backup-cron.sh
 
 CMD ["/bin/bash", "/app/scripts/start-backup-cron.sh"]

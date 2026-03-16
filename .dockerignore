@@ -10,3 +10,4 @@ README.md
 DESIGN*.md
 IMPLEMENTATION_PLAN*.md
 test
+apps/tracker/test

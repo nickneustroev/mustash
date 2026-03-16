@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch apps/tracker/src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "start:docker": "prisma migrate deploy && node dist/main.js",
@@ -16,7 +16,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio --port 5555",
-    "backup": "tsx src/backup-s3.ts"
+    "backup": "tsx apps/tracker/src/backup-s3.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.744.0",

@@ -8,7 +8,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY prisma.config.ts ./
 COPY prisma ./prisma
-COPY src ./src
+COPY apps/tracker/src ./apps/tracker/src
 
 RUN npx prisma generate
 RUN npm run build

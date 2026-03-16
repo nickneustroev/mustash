@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/tracker/Dockerfile
     container_name: spotify-helper-app
     env_file:
       - .env
@@ -17,7 +17,7 @@ services:
   backup-cron:
     build:
       context: .
-      dockerfile: Dockerfile.backup
+      dockerfile: apps/backup/Dockerfile
     container_name: spotify-helper-backup-cron
     env_file:
       - .env
@@ -30,7 +30,7 @@ services:
   prisma-studio:
     build:
       context: .
-      dockerfile: Dockerfile.prisma-studio
+      dockerfile: apps/studio/Dockerfile
     container_name: spotify-helper-prisma-studio
     env_file:
       - .env
