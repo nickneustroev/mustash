@@ -14,6 +14,6 @@ fi
 
 # Run the backup
 cd /app
-"$NODE_BIN" dist/backup-s3.js
+"$NODE_BIN" dist/backup/backup-s3.js
 
 echo "Backup completed successfully"

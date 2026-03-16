@@ -25,9 +25,7 @@ COPY apps/backup/package.json ./package.json
 COPY apps/backup/package-lock.json ./package-lock.json
 RUN npm ci --omit=dev && npm cache clean --force
 
-COPY --from=builder /app/apps/tracker/dist/backup-s3.js ./dist/backup-s3.js
-COPY --from=builder /app/apps/tracker/dist/config.js ./dist/config.js
-COPY --from=builder /app/apps/tracker/dist/logger.js ./dist/logger.js
+COPY --from=builder /app/apps/tracker/dist ./dist
 COPY apps/backup/scripts/backup-s3.sh ./scripts/backup-s3.sh
 COPY apps/backup/scripts/start-backup-cron.sh ./scripts/start-backup-cron.sh
 
