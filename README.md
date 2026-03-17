@@ -192,7 +192,7 @@ TOKEN_STORAGE_PATH=/app/data/.spotify-tokens.json
 
 ### Запуск с бэкапом
 
-`backup` теперь входит в обычный `docker-compose up -d`. Его поведение определяется переменной `BACKUP_ENABLED`:
+`backup-cron` теперь входит в обычный `docker-compose up -d`. Его поведение определяется переменной `BACKUP_ENABLED`:
 
 - `BACKUP_ENABLED=true` - контейнер запускает cron и отправляет бэкапы в S3.
 - `BACKUP_ENABLED=false` - контейнер остаётся запущенным, но ничего не бэкапит.
@@ -213,13 +213,25 @@ BACKUP_CRON=0 0 * * *
 docker-compose up -d
 
 # Просмотр логов бэкапа
-docker-compose logs -f backup
+docker-compose logs -f backup-cron
 ```
 
 Backup работает по cron (по умолчанию в 00:00 UTC) и:
 1. Копирует SQLite-базу во временный файл.
 2. Загружает в S3 в префикс `S3_PREFIX` с timestamp в имени файла.
 3. Удаляет бэкапы старше `BACKUP_RETENTION_DAYS` (по умолчанию 7 дней).
+
+Для ручного запуска бэкапа:
+
+```bash
+# С хоста: зайти в контейнер
+docker-compose exec backup-cron /bin/bash
+
+# Внутри контейнера:
+/bin/bash /app/scripts/backup-s3.sh
+```
+
+Команда через `bash` полезна, если прямой запуск `/app/scripts/backup-s3.sh` даёт `Permission denied`.
 
 ### Восстановление БД при деплое
 
