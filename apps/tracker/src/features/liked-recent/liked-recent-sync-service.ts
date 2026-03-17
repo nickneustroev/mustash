@@ -15,6 +15,7 @@ export class LikedRecentSyncService {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
   private stopped = true;
+  private nextAllowedSyncAtEpochMs = 0;
   private readonly playlistIdsByWindow = new Map<number, string>();
   private readonly lastHashesByWindow = new Map<number, string>();
 
@@ -52,6 +53,9 @@ export class LikedRecentSyncService {
     if (this.stopped || this.running) {
       return;
     }
+    if (Date.now() < this.nextAllowedSyncAtEpochMs) {
+      return;
+    }
 
     this.running = true;
     try {
@@ -79,8 +83,9 @@ export class LikedRecentSyncService {
       }
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
+        this.nextAllowedSyncAtEpochMs = Date.now() + error.retryAfterSeconds * 1000;
         this.logger.warn(
-          `Liked recent sync rate-limited. Retry after ${error.retryAfterSeconds}s on next interval.`,
+          `Liked recent sync rate-limited. Retry after ${error.retryAfterSeconds}s. Next attempt after ${new Date(this.nextAllowedSyncAtEpochMs).toISOString()}.`,
         );
       } else {
         this.logger.warn(`Liked recent sync failed: ${(error as Error).message}`);

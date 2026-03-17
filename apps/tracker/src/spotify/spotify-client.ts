@@ -57,8 +57,10 @@ type TransportMode = "direct" | "proxy";
 
 @Injectable()
 export class SpotifyClient {
+  private static readonly RATE_LIMIT_RETRY_ATTEMPTS = 2;
   private readonly proxyDispatcher: unknown | null;
   private transportMode: TransportMode;
+  private rateLimitedUntilEpochMs = 0;
 
   constructor(
     @Inject(AUTH_MANAGER) private readonly auth: AuthManager,
@@ -273,7 +275,14 @@ export class SpotifyClient {
     };
   }
 
-  private async requestWithAuth(url: string, init: RequestInit, allowRetryOnUnauthorized: boolean): Promise<Response> {
+  private async requestWithAuth(
+    url: string,
+    init: RequestInit,
+    allowRetryOnUnauthorized: boolean,
+    rateLimitRetryAttempts = SpotifyClient.RATE_LIMIT_RETRY_ATTEMPTS,
+  ): Promise<Response> {
+    await this.waitForRateLimitWindow();
+
     const accessToken = await this.auth.getAccessToken();
     const headers = new Headers(init.headers ?? {});
     headers.set("Authorization", `Bearer ${accessToken}`);
@@ -283,13 +292,22 @@ export class SpotifyClient {
     if (response.status === 401 && allowRetryOnUnauthorized) {
       this.log.warn("Spotify API returned 401, refreshing token and retrying once.");
       await this.auth.handleUnauthorized();
-      return this.requestWithAuth(url, init, false);
+      return this.requestWithAuth(url, init, false, rateLimitRetryAttempts);
     }
 
     if (response.status === 429) {
-      const retryAfterHeader = response.headers.get("retry-after");
-      const retryAfterSeconds = Number(retryAfterHeader ?? "2");
-      throw new SpotifyRateLimitError(Number.isNaN(retryAfterSeconds) ? 2 : retryAfterSeconds);
+      const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get("retry-after"));
+      this.bumpRateLimitWindow(retryAfterSeconds);
+
+      if (rateLimitRetryAttempts <= 0) {
+        throw new SpotifyRateLimitError(retryAfterSeconds);
+      }
+
+      this.log.warn(
+        `Spotify API returned 429. Waiting ${retryAfterSeconds}s before retry (${rateLimitRetryAttempts} retries left).`,
+      );
+      await sleep(retryAfterSeconds * 1000);
+      return this.requestWithAuth(url, init, allowRetryOnUnauthorized, rateLimitRetryAttempts - 1);
     }
 
     if (!response.ok) {
@@ -342,6 +360,21 @@ export class SpotifyClient {
 
   private shouldRetryWithProxy(status: number, payload: string): boolean {
     return this.transportMode === "direct" && this.canUseProxy() && isSpotifyGeoBlock(status, payload);
+  }
+
+  private bumpRateLimitWindow(retryAfterSeconds: number): void {
+    const candidateEpochMs = Date.now() + Math.max(0, retryAfterSeconds) * 1000;
+    if (candidateEpochMs > this.rateLimitedUntilEpochMs) {
+      this.rateLimitedUntilEpochMs = candidateEpochMs;
+    }
+  }
+
+  private async waitForRateLimitWindow(): Promise<void> {
+    const waitMs = this.rateLimitedUntilEpochMs - Date.now();
+    if (waitMs <= 0) {
+      return;
+    }
+    await sleep(waitMs);
   }
 }
 
@@ -397,4 +430,28 @@ function isSpotifyGeoBlock(status: number, payload: string): boolean {
   } catch {
     return false;
   }
+}
+
+function parseRetryAfterSeconds(retryAfterHeader: string | null): number {
+  if (!retryAfterHeader) {
+    return 2;
+  }
+
+  const asNumber = Number(retryAfterHeader);
+  if (!Number.isNaN(asNumber) && asNumber >= 0) {
+    return Math.ceil(asNumber);
+  }
+
+  const asDateMs = Date.parse(retryAfterHeader);
+  if (!Number.isNaN(asDateMs)) {
+    return Math.max(1, Math.ceil((asDateMs - Date.now()) / 1000));
+  }
+
+  return 2;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, Math.max(0, ms));
+  });
 }
