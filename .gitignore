@@ -4,7 +4,8 @@ apps/auto-playlists/dist/
 .env
 .env.tracker
 .env.auto-playlists
-.spotify-tokens.json
+.spotify-tokens*.json
+data/.spotify-tokens*.json
 .history-state.json
 coverage/
 npm-debug.log*
