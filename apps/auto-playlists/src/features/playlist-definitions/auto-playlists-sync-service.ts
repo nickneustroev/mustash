@@ -28,7 +28,7 @@ export class AutoPlaylistsSyncService {
 
   public start(): void {
     if (this.options.definitions.length === 0) {
-      this.logger.warn("Auto playlists are enabled but no playlist definitions are configured.");
+      this.logger.warn("No playlist definitions are configured.");
       return;
     }
 
@@ -38,7 +38,7 @@ export class AutoPlaylistsSyncService {
       void this.syncNow();
     }, this.options.syncIntervalMs);
     this.logger.info(
-      `Auto playlists sync started (definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms).`,
+      `Sync started (definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms).`,
     );
   }
 
@@ -48,7 +48,7 @@ export class AutoPlaylistsSyncService {
       clearInterval(this.timer);
       this.timer = null;
     }
-    this.logger.info("Auto playlists sync stopped.");
+    this.logger.info("Sync stopped.");
   }
 
   public async syncNow(): Promise<void> {
@@ -78,16 +78,16 @@ export class AutoPlaylistsSyncService {
 
         await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
         this.lastHashesByDefinitionKey.set(definition.key, hash);
-        this.logger.info(`Auto playlist synced (${definition.playlistName}, ${trackUris.length} items).`);
+        this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
       }
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
         this.nextAllowedSyncAtEpochMs = Date.now() + error.retryAfterSeconds * 1000;
         this.logger.warn(
-          `Auto playlists sync rate-limited. Retry after ${error.retryAfterSeconds}s. Next attempt after ${new Date(this.nextAllowedSyncAtEpochMs).toISOString()}.`,
+          `Sync rate-limited. Retry after ${error.retryAfterSeconds}s. Next attempt after ${new Date(this.nextAllowedSyncAtEpochMs).toISOString()}.`,
         );
       } else {
-        this.logger.warn(`Auto playlists sync failed: ${(error as Error).message}`);
+        this.logger.warn(`Sync failed: ${(error as Error).message}`);
       }
     } finally {
       this.running = false;
@@ -115,7 +115,7 @@ export class AutoPlaylistsSyncService {
         this.options.playlistPrivate,
       );
       this.playlistIdsByDefinitionKey.set(definition.key, created.id);
-      this.logger.info(`Auto playlist created (${definition.playlistName}).`);
+      this.logger.info(`Created (${definition.playlistName}).`);
 
       if (!definition.buildCoverJpeg) {
         continue;
@@ -124,7 +124,7 @@ export class AutoPlaylistsSyncService {
       try {
         const coverJpeg = await definition.buildCoverJpeg();
         await this.spotifyClient.uploadPlaylistCoverImage(created.id, coverJpeg.toString("base64"));
-        this.logger.info(`Auto playlist cover uploaded (${definition.playlistName}).`);
+        this.logger.info(`Cover uploaded (${definition.playlistName}).`);
       } catch (error) {
         this.logger.warn(
           `Failed to upload cover for playlist ${definition.playlistName}: ${(error as Error).message}`,

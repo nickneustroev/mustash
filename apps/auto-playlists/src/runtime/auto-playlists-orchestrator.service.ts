@@ -36,7 +36,7 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     }
     this.shuttingDown = true;
 
-    this.log.info(`Auto playlists stopping (${signal ?? "app.close"}).`);
+    this.log.info(`Stopping (${signal ?? "app.close"}).`);
     this.autoPlaylistsSyncService?.stop();
   }
 }
