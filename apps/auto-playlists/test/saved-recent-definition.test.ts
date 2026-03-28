@@ -1,9 +1,9 @@
 import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { describe, expect, it } from "vitest";
 import {
-  buildLikedRecentPlaylistName,
-  createLikedRecentDefinitions,
-} from "../src/features/liked-recent/liked-recent-definition.js";
+  buildSavedRecentPlaylistName,
+  createSavedRecentDefinitions,
+} from "../src/features/saved-recent/saved-recent-definition.js";
 
 function buildSavedTrack(trackId: string): SavedTrackItem {
   return {
@@ -15,22 +15,20 @@ function buildSavedTrack(trackId: string): SavedTrackItem {
   };
 }
 
-describe("liked recent definitions", () => {
+describe("saved recent definitions", () => {
   it("builds playlist names", () => {
-    expect(buildLikedRecentPlaylistName("LIKED RECENT", "[AUTO]", 20)).toBe(
-      "LIKED RECENT 20 [AUTO]",
-    );
+    expect(buildSavedRecentPlaylistName("SAVED", "[AUTO]", 20)).toBe("SAVED RECENT 20 [AUTO]");
   });
 
-  it("creates ordered recent-liked definitions", () => {
-    const definitions = createLikedRecentDefinitions({
+  it("creates ordered saved recent definitions", () => {
+    const definitions = createSavedRecentDefinitions({
       windows: [2, 3],
-      playlistPrefix: "LIKED RECENT",
+      playlistPrefix: "SAVED",
       playlistSuffix: "[AUTO]",
     });
 
     expect(definitions).toHaveLength(2);
-    expect(definitions[0]?.playlistName).toBe("LIKED RECENT 2 [AUTO]");
+    expect(definitions[0]?.playlistName).toBe("SAVED RECENT 2 [AUTO]");
     expect(
       definitions[1]?.resolveTrackUris([
         buildSavedTrack("a"),

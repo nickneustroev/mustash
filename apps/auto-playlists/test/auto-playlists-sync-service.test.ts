@@ -53,16 +53,16 @@ describe("AutoPlaylistsSyncService", () => {
 
     const definitions: AutoPlaylistDefinition[] = [
       {
-        key: "liked-recent:2",
-        playlistName: "LIKED RECENT 2 [AUTO]",
-        playlistDescription: "Auto-maintained recent liked tracks (2).",
+        key: "saved-recent:2",
+        playlistName: "SAVED RECENT 2 [AUTO]",
+        playlistDescription: "Auto-maintained recent saved tracks (2).",
         resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
         buildCoverJpeg: async () => Buffer.from("cover-2"),
       },
       {
-        key: "liked-recent:3",
-        playlistName: "LIKED RECENT 3 [AUTO]",
-        playlistDescription: "Auto-maintained recent liked tracks (3).",
+        key: "saved-recent:3",
+        playlistName: "SAVED RECENT 3 [AUTO]",
+        playlistDescription: "Auto-maintained recent saved tracks (3).",
         resolveTrackUris: (savedTracks) => savedTracks.slice(0, 3).map((track) => track.trackUri),
         buildCoverJpeg: async () => Buffer.from("cover-3"),
       },
@@ -87,7 +87,7 @@ describe("AutoPlaylistsSyncService", () => {
 
   it("does not upload cover when playlist already exists", async () => {
     const getCurrentUserId = vi.fn().mockResolvedValue("user-1");
-    const findPlaylistByName = vi.fn().mockResolvedValueOnce({ id: "p2", name: "LIKED RECENT 2 [AUTO]" });
+    const findPlaylistByName = vi.fn().mockResolvedValueOnce({ id: "p2", name: "SAVED RECENT 2 [AUTO]" });
     const createPlaylist = vi.fn().mockResolvedValue({ id: "unused", name: "unused" });
     const replacePlaylistItems = vi.fn().mockResolvedValue(undefined);
     const uploadPlaylistCoverImage = vi.fn().mockResolvedValue(undefined);
@@ -107,9 +107,9 @@ describe("AutoPlaylistsSyncService", () => {
     const service = new AutoPlaylistsSyncService(spotifyClient, savedTracksSource, log, {
       definitions: [
         {
-          key: "liked-recent:2",
-          playlistName: "LIKED RECENT 2 [AUTO]",
-          playlistDescription: "Auto-maintained recent liked tracks (2).",
+          key: "saved-recent:2",
+          playlistName: "SAVED RECENT 2 [AUTO]",
+          playlistDescription: "Auto-maintained recent saved tracks (2).",
           resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
           buildCoverJpeg: async () => Buffer.from("cover-2"),
         },

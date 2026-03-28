@@ -210,7 +210,7 @@ export class SpotifyClient {
       .filter((item): item is RecentlyPlayedItem => item !== null);
   }
 
-  public async getRecentLikedUris(limit: number): Promise<string[]> {
+  public async getRecentSavedTrackUris(limit: number): Promise<string[]> {
     const target = Math.max(0, limit);
     if (target === 0) {
       return [];

@@ -5,7 +5,7 @@
 1. `apps/tracker`
    Отслеживает и сохраняет данные в SQLite: историю прослушиваний, зеркало `Saved Tracks`, архив удалений из избранного и связанные backup-сценарии.
 2. `apps/auto-playlists`
-   Автоматически поддерживает плейлисты на основе текущего списка `Saved Tracks`. Первая реализованная стратегия: `Liked Recent`.
+   Автоматически поддерживает плейлисты на основе текущего списка `Saved Tracks`. Текущие стратегии: `Saved Recent` и `Saved In Year`.
 
 Текущий статус: MVP реализован.
 
@@ -112,18 +112,19 @@ TOKEN_STORAGE_PATH=data/.spotify-tokens.auto-playlists.json
 # SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/callback
 # SPOTIFY_LISTEN_PORT=3001
 
-LIKED_RECENT_ENABLED=true
-LIKED_RECENT_WINDOWS=20,50,100
-LIKED_RECENT_PLAYLIST_PREFIX=LIKED RECENT
-LIKED_RECENT_PLAYLIST_SUFFIX=[AUTO]
-LIKED_RECENT_SYNC_INTERVAL_MS=15000
-LIKED_RECENT_PLAYLIST_PRIVATE=true
+AUTO_PLAYLISTS_PLAYLIST_PREFIX=SAVED
+AUTO_PLAYLISTS_PLAYLIST_SUFFIX=[AUTO]
+AUTO_PLAYLISTS_SYNC_INTERVAL_MS=15000
+
+SAVED_RECENT_WINDOWS=20,50,100
+SAVED_IN_YEAR_YEARS=
 ```
 
 `auto-playlists` использует:
 
 1. OAuth-токены (`TOKEN_STORAGE_PATH`)
-2. правила авто-плейлистов (`LIKED_RECENT_*`)
+2. общий runtime авто-плейлистов (`AUTO_PLAYLISTS_*`)
+3. правила авто-плейлистов (`SAVED_RECENT_WINDOWS`, `SAVED_IN_YEAR_YEARS`)
 3. общие Spotify OAuth / proxy настройки из `.env`
 
 ## Локальный запуск
@@ -289,13 +290,14 @@ docker-compose up -d tracker
 S3_RESTORE_ON_EMPTY_DB=true
 ```
 
-## Как работает `LIKED RECENT` (`apps/auto-playlists`)
+## Как работают `SAVED` авто-плейлисты (`apps/auto-playlists`)
 
 1. Сервис читает `Saved Tracks` через Spotify API.
-2. Берет последние треки и формирует окна из `LIKED_RECENT_WINDOWS`.
-3. Для каждого окна поддерживает отдельный плейлист.
-4. При создании нового плейлиста автоматически выставляется обложка.
-5. При добавлении или удалении из избранного плейлисты обновляются автоматически.
+2. Если задан `SAVED_RECENT_WINDOWS`, формирует плейлисты `SAVED RECENT {N} [AUTO]`.
+3. Если задан `SAVED_IN_YEAR_YEARS`, формирует плейлисты `SAVED {YEAR} [AUTO]`.
+4. Для каждого definition поддерживает отдельный плейлист.
+5. При создании `saved recent` плейлиста автоматически выставляется обложка.
+6. При добавлении или удалении из избранного плейлисты обновляются автоматически.
 
 ## Как работает `SAVED TRACKS` (`apps/tracker`)
 
@@ -319,14 +321,4 @@ S3_RESTORE_ON_EMPTY_DB=true
 2. Нет поддержки нескольких пользователей.
 3. История хранится локально в SQLite.
 4. Нет UI, только консольный вывод и Prisma Studio для админ-доступа к данным.
-5. Для liked-плейлистов применяется полная синхронизация окна.
-
-## Документация
-
-1. Дизайн-док: `DESIGN.md`
-2. План реализации: `IMPLEMENTATION_PLAN.md`
-3. Addon-дизайн плейлиста: `DESIGN_ADDON_PLAYLIST.md`
-4. План реализации плейлиста: `IMPLEMENTATION_PLAN_PLAYLIST.md`
-5. Addon-дизайн liked-плейлистов: `DESIGN_ADDON_LIKED_RECENT.md`
-6. План реализации liked-плейлистов: `IMPLEMENTATION_PLAN_LIKED_RECENT.md`
-7. Дизайн Saved Tracks: `DESIGN_SAVED_TRACKS.md`
+5. Для saved-плейлистов применяется полная синхронизация набора треков.

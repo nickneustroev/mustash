@@ -11,7 +11,7 @@ describe("Nest bootstrap lifecycle", () => {
     process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
     process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
     process.env.TOKEN_STORAGE_PATH = "data/.spotify-tokens.test.json";
-    process.env.LIKED_RECENT_ENABLED = "true";
+    process.env.SAVED_RECENT_WINDOWS = "20,50,100";
 
     vi.spyOn(AuthManager.prototype, "initialize").mockResolvedValue();
     vi.spyOn(AutoPlaylistsSyncService.prototype, "start").mockImplementation(() => {});

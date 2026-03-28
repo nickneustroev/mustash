@@ -2,27 +2,26 @@ import { config as loadEnv } from "dotenv";
 import path from "node:path";
 import { z } from "zod";
 
-const likedWindowsSchema = z.string().default("20,50,100").transform((value) => parseLikedRecentWindows(value));
+const savedRecentWindowsSchema = z
+  .string()
+  .optional()
+  .transform((value) => parseSavedRecentWindows(value));
+
+const savedInYearYearsSchema = z
+  .string()
+  .optional()
+  .transform((value) => parseSavedInYearYears(value));
 
 const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
   SPOTIFY_REDIRECT_URI: z.string().url(),
   TOKEN_STORAGE_PATH: z.string().default("data/.spotify-tokens.json"),
-  LIKED_RECENT_ENABLED: z
-    .string()
-    .optional()
-    .transform((v) => v !== "false")
-    .default(true),
-  LIKED_RECENT_WINDOWS: likedWindowsSchema,
-  LIKED_RECENT_PLAYLIST_PREFIX: z.string().min(1).default("LIKED RECENT"),
-  LIKED_RECENT_PLAYLIST_SUFFIX: z.string().min(1).default("[AUTO]"),
-  LIKED_RECENT_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
-  LIKED_RECENT_PLAYLIST_PRIVATE: z
-    .string()
-    .optional()
-    .transform((v) => v !== "false")
-    .default(true),
+  AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().min(1).default("SAVED"),
+  AUTO_PLAYLISTS_PLAYLIST_SUFFIX: z.string().min(1).default("[AUTO]"),
+  AUTO_PLAYLISTS_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
+  SAVED_RECENT_WINDOWS: savedRecentWindowsSchema,
+  SAVED_IN_YEAR_YEARS: savedInYearYearsSchema,
   SPOTIFY_PROXY_ENABLED: z
     .string()
     .optional()
@@ -37,12 +36,11 @@ export interface AppConfig {
   spotifyRedirectUri: string;
   tokenStoragePath: string;
   requestTimeoutMs: number;
-  likedRecentEnabled: boolean;
-  likedRecentWindows: number[];
-  likedRecentPlaylistPrefix: string;
-  likedRecentPlaylistSuffix: string;
-  likedRecentSyncIntervalMs: number;
-  likedRecentPlaylistPrivate: boolean;
+  autoPlaylistsPlaylistPrefix: string;
+  autoPlaylistsPlaylistSuffix: string;
+  autoPlaylistsSyncIntervalMs: number;
+  savedRecentWindows: number[];
+  savedInYearYears: number[];
   spotifyProxyEnabled: boolean;
   spotifyProxyUrl: string;
 }
@@ -66,12 +64,11 @@ export function loadConfig(): AppConfig {
     spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI,
     tokenStoragePath: path.resolve(process.cwd(), env.TOKEN_STORAGE_PATH),
     requestTimeoutMs: 5000,
-    likedRecentEnabled: env.LIKED_RECENT_ENABLED,
-    likedRecentWindows: env.LIKED_RECENT_WINDOWS,
-    likedRecentPlaylistPrefix: env.LIKED_RECENT_PLAYLIST_PREFIX,
-    likedRecentPlaylistSuffix: env.LIKED_RECENT_PLAYLIST_SUFFIX,
-    likedRecentSyncIntervalMs: env.LIKED_RECENT_SYNC_INTERVAL_MS,
-    likedRecentPlaylistPrivate: env.LIKED_RECENT_PLAYLIST_PRIVATE,
+    autoPlaylistsPlaylistPrefix: env.AUTO_PLAYLISTS_PLAYLIST_PREFIX,
+    autoPlaylistsPlaylistSuffix: env.AUTO_PLAYLISTS_PLAYLIST_SUFFIX,
+    autoPlaylistsSyncIntervalMs: env.AUTO_PLAYLISTS_SYNC_INTERVAL_MS,
+    savedRecentWindows: env.SAVED_RECENT_WINDOWS,
+    savedInYearYears: env.SAVED_IN_YEAR_YEARS,
     spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
     spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
   };
@@ -88,31 +85,61 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     spotifyRedirectUri: cfg.spotifyRedirectUri,
     tokenStoragePath: cfg.tokenStoragePath,
     requestTimeoutMs: cfg.requestTimeoutMs,
-    likedRecentEnabled: cfg.likedRecentEnabled,
-    likedRecentWindows: cfg.likedRecentWindows.join(","),
-    likedRecentPlaylistPrefix: cfg.likedRecentPlaylistPrefix,
-    likedRecentPlaylistSuffix: cfg.likedRecentPlaylistSuffix,
-    likedRecentSyncIntervalMs: cfg.likedRecentSyncIntervalMs,
-    likedRecentPlaylistPrivate: cfg.likedRecentPlaylistPrivate,
+    autoPlaylistsPlaylistPrefix: cfg.autoPlaylistsPlaylistPrefix,
+    autoPlaylistsPlaylistSuffix: cfg.autoPlaylistsPlaylistSuffix,
+    autoPlaylistsSyncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
+    savedRecentWindows: cfg.savedRecentWindows.join(","),
+    savedInYearYears: cfg.savedInYearYears.join(","),
     spotifyProxyEnabled: cfg.spotifyProxyEnabled,
     spotifyProxyConfigured: cfg.spotifyProxyUrl.length > 0,
   };
 }
 
-export function parseLikedRecentWindows(value: string): number[] {
+export function parseSavedRecentWindows(value: string | undefined): number[] {
+  return parseIntegerList(value, {
+    min: 1,
+    max: 1000,
+    emptyMessage: "SAVED_RECENT_WINDOWS must contain at least one window size.",
+    invalidMessage: (num) => `Invalid saved recent window "${num}". Allowed range: 1..1000.`,
+  });
+}
+
+export function parseSavedInYearYears(value: string | undefined): number[] {
+  const currentYear = new Date().getUTCFullYear();
+  return parseIntegerList(value, {
+    min: 2006,
+    max: currentYear + 1,
+    emptyMessage: "SAVED_IN_YEAR_YEARS must contain at least one year.",
+    invalidMessage: (num) => `Invalid saved-in-year value "${num}". Allowed range: 2006..${currentYear + 1}.`,
+  });
+}
+
+function parseIntegerList(
+  value: string | undefined,
+  options: {
+    min: number;
+    max: number;
+    emptyMessage: string;
+    invalidMessage: (num: number) => string;
+  },
+): number[] {
+  if (value === undefined || value.trim().length === 0) {
+    return [];
+  }
+
   const tokens = value
     .split(",")
     .map((token) => token.trim())
     .filter((token) => token.length > 0);
 
   if (tokens.length === 0) {
-    throw new Error("LIKED_RECENT_WINDOWS must contain at least one window size.");
+    throw new Error(options.emptyMessage);
   }
 
   const parsed = tokens.map((token) => Number(token));
   for (const num of parsed) {
-    if (!Number.isInteger(num) || num <= 0 || num > 1000) {
-      throw new Error(`Invalid liked recent window "${num}". Allowed range: 1..1000.`);
+    if (!Number.isInteger(num) || num < options.min || num > options.max) {
+      throw new Error(options.invalidMessage(num));
     }
   }
 
