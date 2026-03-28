@@ -18,6 +18,10 @@ import { AutoPlaylistsOrchestratorService } from "./auto-playlists-orchestrator.
       provide: AUTO_PLAYLISTS_SYNC_SERVICE,
       inject: [SPOTIFY_CLIENT, APP_LOGGER, APP_CONFIG],
       useFactory: (spotifyClient: SpotifyClient, log: Logger, cfg: AppConfig) => {
+        const maxRecentTracks =
+          cfg.savedRecentWindows.length > 0 ? Math.max(...cfg.savedRecentWindows) : undefined;
+        const minSavedYear =
+          cfg.savedInYearYears.length > 0 ? Math.min(...cfg.savedInYearYears) : undefined;
         const definitions = [
           ...createSavedRecentDefinitions({
             windows: cfg.savedRecentWindows,
@@ -42,6 +46,10 @@ import { AutoPlaylistsOrchestratorService } from "./auto-playlists-orchestrator.
                 definitions,
                 syncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
                 playlistPrivate: true,
+                savedTracksRequirements: {
+                  ...(maxRecentTracks !== undefined ? { maxRecentTracks } : {}),
+                  ...(minSavedYear !== undefined ? { minSavedYear } : {}),
+                },
               },
             )
           : null;

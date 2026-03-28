@@ -2,12 +2,13 @@ import { SpotifyRateLimitError } from "../../shared/errors.js";
 import type { Logger } from "../../shared/types.js";
 import type { SpotifyClient } from "../../spotify/spotify-client.js";
 import type { AutoPlaylistDefinition } from "./auto-playlist-definition.js";
-import type { SavedTracksSource } from "./saved-tracks-source.js";
+import type { SavedTracksFetchRequirements, SavedTracksSource } from "./saved-tracks-source.js";
 
 export interface AutoPlaylistsSyncOptions {
   definitions: AutoPlaylistDefinition[];
   syncIntervalMs: number;
   playlistPrivate: boolean;
+  savedTracksRequirements?: SavedTracksFetchRequirements;
 }
 
 export class AutoPlaylistsSyncService {
@@ -61,7 +62,7 @@ export class AutoPlaylistsSyncService {
     this.running = true;
     try {
       await this.ensurePlaylists();
-      const savedTracks = await this.savedTracksSource.getSavedTracks();
+      const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
 
       for (const definition of this.options.definitions) {
         const playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
