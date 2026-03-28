@@ -1,12 +1,12 @@
 import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from "@nestjs/common";
 import { type AppConfig, getSafeConfigForLogs } from "../core/config.js";
 import {
+  AUTO_PLAYLISTS_SYNC_SERVICE,
   APP_CONFIG,
   APP_LOGGER,
   AUTH_MANAGER,
-  LIKED_RECENT_SYNC_SERVICE,
 } from "../core/nest.tokens.js";
-import type { LikedRecentSyncService } from "../features/liked-recent/liked-recent-sync-service.js";
+import type { AutoPlaylistsSyncService } from "../features/playlist-definitions/auto-playlists-sync-service.js";
 import type { Logger } from "../shared/types.js";
 import type { AuthManager } from "../spotify/auth-manager.js";
 
@@ -18,8 +18,8 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
     @Inject(APP_LOGGER) private readonly log: Logger,
     @Inject(AUTH_MANAGER) private readonly authManager: AuthManager,
-    @Inject(LIKED_RECENT_SYNC_SERVICE)
-    private readonly likedRecentSyncService: LikedRecentSyncService | null,
+    @Inject(AUTO_PLAYLISTS_SYNC_SERVICE)
+    private readonly autoPlaylistsSyncService: AutoPlaylistsSyncService | null,
   ) {}
 
   public async onModuleInit(): Promise<void> {
@@ -27,7 +27,7 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     await this.authManager.initialize();
     this.log.info("Spotify auth is ready.");
 
-    this.likedRecentSyncService?.start();
+    this.autoPlaylistsSyncService?.start();
   }
 
   public async onApplicationShutdown(signal?: string): Promise<void> {
@@ -37,6 +37,6 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     this.shuttingDown = true;
 
     this.log.info(`Auto playlists stopping (${signal ?? "app.close"}).`);
-    this.likedRecentSyncService?.stop();
+    this.autoPlaylistsSyncService?.stop();
   }
 }

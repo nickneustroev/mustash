@@ -2,7 +2,7 @@ import "reflect-metadata";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "../src/core/app.module.js";
-import { LikedRecentSyncService } from "../src/features/liked-recent/liked-recent-sync-service.js";
+import { AutoPlaylistsSyncService } from "../src/features/playlist-definitions/auto-playlists-sync-service.js";
 import { AuthManager } from "../src/spotify/auth-manager.js";
 
 describe("Nest bootstrap lifecycle", () => {
@@ -14,8 +14,8 @@ describe("Nest bootstrap lifecycle", () => {
     process.env.LIKED_RECENT_ENABLED = "true";
 
     vi.spyOn(AuthManager.prototype, "initialize").mockResolvedValue();
-    vi.spyOn(LikedRecentSyncService.prototype, "start").mockImplementation(() => {});
-    vi.spyOn(LikedRecentSyncService.prototype, "stop").mockImplementation(() => {});
+    vi.spyOn(AutoPlaylistsSyncService.prototype, "start").mockImplementation(() => {});
+    vi.spyOn(AutoPlaylistsSyncService.prototype, "stop").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -26,10 +26,10 @@ describe("Nest bootstrap lifecycle", () => {
     const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
 
     expect(AuthManager.prototype.initialize).toHaveBeenCalledTimes(1);
-    expect(LikedRecentSyncService.prototype.start).toHaveBeenCalledTimes(1);
+    expect(AutoPlaylistsSyncService.prototype.start).toHaveBeenCalledTimes(1);
 
     await app.close();
 
-    expect(LikedRecentSyncService.prototype.stop).toHaveBeenCalledTimes(1);
+    expect(AutoPlaylistsSyncService.prototype.stop).toHaveBeenCalledTimes(1);
   });
 });
