@@ -1,14 +1,11 @@
 # Spotify Track Console Notifier
 
-Локальное CLI-приложение для одного пользователя:
+Репозиторий содержит два CLI-приложения для одного пользователя:
 
-1. При смене трека в Spotify выводит в консоль:
-
-`Исполнитель - Название трека`
-
-2. Сохраняет полную историю прослушиваний в SQLite через Prisma.
-3. Опционально поддерживает набор плейлистов по последним `Liked Songs` (например 20/50/100).
-4. Опционально синхронизирует и хранит полный список избранных треков в БД.
+1. `apps/tracker`
+   Отслеживает и сохраняет данные в SQLite: историю прослушиваний, зеркало `Saved Tracks`, архив удалений из избранного и связанные backup-сценарии.
+2. `apps/auto-playlists`
+   Автоматически поддерживает плейлисты на основе текущего списка `Saved Tracks` в Spotify. Первая реализованная стратегия: `Liked Recent`.
 
 Текущий статус: MVP реализован.
 
@@ -117,17 +114,19 @@ BACKUP_RETENTION_DAYS=7
 1. Установить зависимости:
 `npm install`
 
-2. Сгенерировать Prisma Client:
+2. Для `apps/tracker` сгенерировать Prisma Client:
 `npm run prisma:generate`
 
-3. Применить миграции для локальной БД:
+3. Для `apps/tracker` применить миграции для локальной БД:
 `npm run prisma:migrate:dev`
 
-4. Убедиться, что в `.env` для локальной разработки задана БД, например:
+4. Убедиться, что в `.env` для локальной разработки `tracker` задана БД, например:
 `DATABASE_URL=file:./dev.db`
 
-5. Запустить приложение:
-`npm run dev`
+5. Запустить нужное приложение:
+`npm run dev:tracker`
+или
+`npm run dev:auto-playlists`
 
 ### Production-запуск
 
@@ -135,27 +134,34 @@ BACKUP_RETENTION_DAYS=7
 `npm run build`
 
 2. Запуск:
-`npm run start`
+`npm run start:tracker`
+или
+`npm run start:auto-playlists`
 
 Ожидаемое поведение:
 
 1. При первом запуске откроется авторизация Spotify.
-2. После успешного входа приложение начнет отслеживание.
-3. При смене трека в консоли появится строка вида:
+2. `tracker` после входа начнет отслеживание playback и синхронизацию данных в БД.
+3. `auto-playlists` после входа начнет поддерживать авто-плейлисты.
+4. При смене трека в консоли `tracker` появится строка вида:
 `Artist - Track`
-4. Все события прослушивания сохраняются в SQLite-базу.
-5. Backfill периодически добирает пропущенные события из recently played.
+5. Все события прослушивания в `tracker` сохраняются в SQLite-базу.
+6. Backfill в `tracker` периодически добирает пропущенные события из recently played.
 
 ## Команды
 
-1. `npm run dev` - запуск в режиме разработки.
-2. `npm run build` - сборка TypeScript в `apps/tracker/dist/`.
-3. `npm run start` - запуск собранного приложения.
-4. `npm test` - запуск unit-тестов.
-5. `npm run lint` - проверка линтером.
-6. `npm run prisma:generate` - генерация Prisma Client.
-7. `npm run prisma:migrate:dev` - запуск dev-миграций Prisma.
-8. `npm run prisma:studio` - запуск Prisma Studio на порту `5555`.
+1. `npm run dev:tracker` - запуск `apps/tracker` в режиме разработки.
+2. `npm run dev:auto-playlists` - запуск `apps/auto-playlists` в режиме разработки.
+3. `npm run build` - сборка обоих приложений.
+4. `npm run build:tracker` - сборка `apps/tracker` в `apps/tracker/dist/`.
+5. `npm run build:auto-playlists` - сборка `apps/auto-playlists` в `apps/auto-playlists/dist/`.
+6. `npm run start:tracker` - запуск собранного `tracker`.
+7. `npm run start:auto-playlists` - запуск собранного `auto-playlists`.
+8. `npm test` - запуск unit-тестов обоих приложений.
+9. `npm run lint` - проверка линтером.
+10. `npm run prisma:generate` - генерация Prisma Client для `tracker`.
+11. `npm run prisma:migrate:dev` - запуск dev-миграций Prisma для `tracker`.
+12. `npm run prisma:studio` - запуск Prisma Studio на порту `5555`.
 
 ## Docker-запуск
 
@@ -264,7 +270,7 @@ S3_RESTORE_ON_EMPTY_DB=true
 4. Нет UI, только консольный вывод и Prisma Studio для админ-доступа к данным.
 5. Для liked-плейлистов применяется полная синхронизация окна.
 
-## Как Работает LIKED RECENT
+## Как Работает LIKED RECENT (`apps/auto-playlists`)
 
 1. Сервис периодически читает `Liked Songs` через Spotify API.
 2. Берет последние треки и формирует окна из `LIKED_RECENT_WINDOWS`.
@@ -272,7 +278,7 @@ S3_RESTORE_ON_EMPTY_DB=true
 4. При создании нового liked-плейлиста автоматически выставляется обложка (`N recent`).
 5. При добавлении или удалении из избранного плейлисты обновляются автоматически.
 
-## Как Работает SAVED TRACKS
+## Как Работает SAVED TRACKS (`apps/tracker`)
 
 1. Сервис синхронизирует полный список избранных треков в локальную SQLite-базу.
 2. При запуске выполняет полную синхронизацию (загружает все треки из Spotify).

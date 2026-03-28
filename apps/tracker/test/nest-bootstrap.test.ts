@@ -5,7 +5,6 @@ import { AppModule } from "../src/core/app.module.js";
 import { AuthManager } from "../src/spotify/auth-manager.js";
 import { BackfillService } from "../src/runtime/backfill-service.js";
 import { PrismaHistoryRepository } from "../src/persistence/history-repository.js";
-import { LikedRecentSyncService } from "../src/features/liked-recent/liked-recent-sync-service.js";
 import { SavedTracksSyncService } from "../src/features/saved-tracks/saved-tracks-sync-service.js";
 import { TrackWatcher } from "../src/runtime/track-watcher.js";
 
@@ -15,7 +14,6 @@ describe("Nest bootstrap lifecycle", () => {
     process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
     process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
     process.env.DATABASE_URL = "file:./test-bootstrap.db";
-    process.env.LIKED_RECENT_ENABLED = "false";
     process.env.SAVED_TRACKS_ENABLED = "false";
     process.env.TOKEN_STORAGE_PATH = "data/.spotify-tokens.test.json";
 
@@ -24,8 +22,6 @@ describe("Nest bootstrap lifecycle", () => {
     vi.spyOn(TrackWatcher.prototype, "stop").mockImplementation(() => {});
     vi.spyOn(BackfillService.prototype, "start").mockImplementation(() => {});
     vi.spyOn(BackfillService.prototype, "stop").mockImplementation(() => {});
-    vi.spyOn(LikedRecentSyncService.prototype, "start").mockImplementation(() => {});
-    vi.spyOn(LikedRecentSyncService.prototype, "stop").mockImplementation(() => {});
     vi.spyOn(SavedTracksSyncService.prototype, "start").mockImplementation(() => {});
     vi.spyOn(SavedTracksSyncService.prototype, "stop").mockImplementation(() => {});
     vi.spyOn(PrismaHistoryRepository.prototype, "close").mockResolvedValue();

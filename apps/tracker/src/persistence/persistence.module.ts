@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import { PrismaArchiveRepository } from "./archive-repository.js";
 import { type AppConfig } from "../core/config.js";
 import { CoreModule } from "../core/core.module.js";

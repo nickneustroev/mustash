@@ -4,7 +4,7 @@ import parser from "@typescript-eslint/parser";
 export default [
   {
     files: ["**/*.ts"],
-    ignores: ["dist/**", "apps/tracker/dist/**", "node_modules/**"],
+    ignores: ["dist/**", "apps/tracker/dist/**", "apps/auto-playlists/dist/**", "node_modules/**"],
     languageOptions: {
       parser,
       ecmaVersion: 2022,

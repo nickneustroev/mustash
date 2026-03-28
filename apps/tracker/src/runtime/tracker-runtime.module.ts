@@ -1,11 +1,10 @@
 import { Module } from "@nestjs/common";
-import { ArchiveRepository } from "../persistence/archive-repository.js";
+import type { ArchiveRepository } from "../persistence/archive-repository.js";
 import { BackfillService } from "./backfill-service.js";
 import { ConsoleNotifier } from "./console-notifier.js";
 import { type AppConfig } from "../core/config.js";
 import { CoreModule } from "../core/core.module.js";
 import { type HistoryRepository, estimateLivePlayedAt } from "../persistence/history-repository.js";
-import { LikedRecentSyncService } from "../features/liked-recent/liked-recent-sync-service.js";
 import {
   APP_CONFIG,
   APP_LOGGER,
@@ -13,7 +12,6 @@ import {
   BACKFILL_SERVICE,
   CONSOLE_NOTIFIER,
   HISTORY_REPOSITORY,
-  LIKED_RECENT_SYNC_SERVICE,
   SAVED_TRACK_REPOSITORY,
   SAVED_TRACKS_SYNC_SERVICE,
   SPOTIFY_CLIENT,
@@ -21,9 +19,9 @@ import {
 } from "../core/nest.tokens.js";
 import { PersistenceModule } from "../persistence/persistence.module.js";
 import { SavedTracksSyncService } from "../features/saved-tracks/saved-tracks-sync-service.js";
-import { SavedTrackRepository } from "../persistence/saved-track-repository.js";
+import type { SavedTrackRepository } from "../persistence/saved-track-repository.js";
 import { SpotifyModule } from "../spotify/spotify.module.js";
-import { SpotifyClient } from "../spotify/spotify-client.js";
+import type { SpotifyClient } from "../spotify/spotify-client.js";
 import { TrackWatcher } from "./track-watcher.js";
 import { TrackerOrchestratorService } from "./tracker-orchestrator.service.js";
 import type { Logger } from "../shared/types.js";
@@ -87,20 +85,6 @@ import type { Logger } from "../shared/types.js";
           intervalMs: cfg.backfillIntervalMs,
           limit: cfg.backfillLimit,
         }),
-    },
-    {
-      provide: LIKED_RECENT_SYNC_SERVICE,
-      inject: [SPOTIFY_CLIENT, APP_LOGGER, APP_CONFIG],
-      useFactory: (spotifyClient: SpotifyClient, log: Logger, cfg: AppConfig) =>
-        cfg.likedRecentEnabled
-          ? new LikedRecentSyncService(spotifyClient, log, {
-              windows: cfg.likedRecentWindows,
-              playlistPrefix: cfg.likedRecentPlaylistPrefix,
-              playlistSuffix: cfg.likedRecentPlaylistSuffix,
-              syncIntervalMs: cfg.likedRecentSyncIntervalMs,
-              playlistPrivate: cfg.likedRecentPlaylistPrivate,
-            })
-          : null,
     },
     {
       provide: SAVED_TRACKS_SYNC_SERVICE,

@@ -16,12 +16,6 @@ function createConfig(): AppConfig {
     databaseUrl: "file:./test.db",
     backfillIntervalMs: 60000,
     backfillLimit: 50,
-    likedRecentEnabled: true,
-    likedRecentWindows: [20, 50, 200],
-    likedRecentPlaylistPrefix: "LIKED RECENT",
-    likedRecentPlaylistSuffix: "[AUTO]",
-    likedRecentSyncIntervalMs: 15000,
-    likedRecentPlaylistPrivate: true,
     spotifyProxyEnabled: false,
     spotifyProxyUrl: "",
   };

@@ -8,6 +8,7 @@ services:
       - .env
     environment:
       DATABASE_URL: file:/app/data/history.db
+      TOKEN_STORAGE_PATH: /app/data/.spotify-tokens.json
     ports:
       - "3000:3000"
     volumes:

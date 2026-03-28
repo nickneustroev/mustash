@@ -1,22 +1,20 @@
-import { Inject, Injectable, OnApplicationShutdown, OnModuleInit } from "@nestjs/common";
-import { AuthManager } from "../spotify/auth-manager.js";
-import { BackfillService } from "./backfill-service.js";
+import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from "@nestjs/common";
 import { type AppConfig, getSafeConfigForLogs } from "../core/config.js";
 import type { HistoryRepository } from "../persistence/history-repository.js";
-import { LikedRecentSyncService } from "../features/liked-recent/liked-recent-sync-service.js";
 import {
   APP_CONFIG,
   APP_LOGGER,
   AUTH_MANAGER,
   BACKFILL_SERVICE,
   HISTORY_REPOSITORY,
-  LIKED_RECENT_SYNC_SERVICE,
   SAVED_TRACKS_SYNC_SERVICE,
   TRACK_WATCHER,
 } from "../core/nest.tokens.js";
-import { SavedTracksSyncService } from "../features/saved-tracks/saved-tracks-sync-service.js";
-import { TrackWatcher } from "./track-watcher.js";
+import type { SavedTracksSyncService } from "../features/saved-tracks/saved-tracks-sync-service.js";
 import type { Logger } from "../shared/types.js";
+import type { AuthManager } from "../spotify/auth-manager.js";
+import type { TrackWatcher } from "./track-watcher.js";
+import type { BackfillService } from "./backfill-service.js";
 
 @Injectable()
 export class TrackerOrchestratorService implements OnModuleInit, OnApplicationShutdown {
@@ -29,8 +27,6 @@ export class TrackerOrchestratorService implements OnModuleInit, OnApplicationSh
     @Inject(HISTORY_REPOSITORY) private readonly historyRepository: HistoryRepository,
     @Inject(TRACK_WATCHER) private readonly watcher: TrackWatcher,
     @Inject(BACKFILL_SERVICE) private readonly backfillService: BackfillService,
-    @Inject(LIKED_RECENT_SYNC_SERVICE)
-    private readonly likedRecentSyncService: LikedRecentSyncService | null,
     @Inject(SAVED_TRACKS_SYNC_SERVICE)
     private readonly savedTracksSyncService: SavedTracksSyncService | null,
   ) {}
@@ -42,7 +38,6 @@ export class TrackerOrchestratorService implements OnModuleInit, OnApplicationSh
 
     this.watcher.start();
     this.backfillService.start();
-    this.likedRecentSyncService?.start();
     this.savedTracksSyncService?.start();
   }
 
@@ -54,7 +49,6 @@ export class TrackerOrchestratorService implements OnModuleInit, OnApplicationSh
 
     this.log.info(`Tracker stopping (${signal ?? "app.close"}).`);
     this.watcher.stop();
-    this.likedRecentSyncService?.stop();
     this.savedTracksSyncService?.stop();
     this.backfillService.stop();
     await this.historyRepository.close();

@@ -6,6 +6,8 @@ apps/tracker/dist/
 coverage/
 npm-debug.log*
 *.db
+*-dev.stdout.log
+*-dev.stderr.log
 test/**/*.js
 test/**/*.js.map
 test/**/*.d.ts
