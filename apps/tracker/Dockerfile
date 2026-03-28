@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
+COPY packages/spotify ./packages/spotify
 RUN npm ci
 
 COPY apps/tracker/tsconfig.json ./apps/tracker/tsconfig.json

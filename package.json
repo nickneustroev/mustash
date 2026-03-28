@@ -5,6 +5,9 @@
   "license": "ISC",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm run dev:tracker",
     "dev:tracker": "tsx watch --tsconfig apps/tracker/tsconfig.json apps/tracker/src/core/main.ts",
@@ -29,6 +32,7 @@
     "backup": "tsx apps/tracker/src/backup/backup-s3.ts"
   },
   "dependencies": {
+    "@spotify-helper/spotify": "workspace:*",
     "@aws-sdk/client-s3": "^3.744.0",
     "@nestjs/common": "^11.1.6",
     "@nestjs/core": "^11.1.6",
