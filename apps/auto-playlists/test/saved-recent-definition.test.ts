@@ -20,6 +20,10 @@ describe("saved recent definitions", () => {
     expect(buildSavedRecentPlaylistName("SAVED", "[AUTO]", 20)).toBe("SAVED RECENT 20 [AUTO]");
   });
 
+  it("builds playlist names without prefix when prefix is empty", () => {
+    expect(buildSavedRecentPlaylistName("", "[AUTO]", 20)).toBe("RECENT 20 [AUTO]");
+  });
+
   it("creates ordered saved recent definitions", () => {
     const definitions = createSavedRecentDefinitions({
       windows: [2, 3],

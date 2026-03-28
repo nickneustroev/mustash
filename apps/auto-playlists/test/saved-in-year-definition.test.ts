@@ -20,6 +20,10 @@ describe("saved in year definitions", () => {
     expect(buildSavedInYearPlaylistName("SAVED", "[AUTO]", 2024)).toBe("SAVED 2024 [AUTO]");
   });
 
+  it("builds playlist names without prefix when prefix is empty", () => {
+    expect(buildSavedInYearPlaylistName("", "[AUTO]", 2024)).toBe("2024 [AUTO]");
+  });
+
   it("creates yearly definitions using UTC year", () => {
     const definitions = createSavedInYearDefinitions({
       years: [2023, 2024],

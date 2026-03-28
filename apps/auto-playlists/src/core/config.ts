@@ -13,14 +13,18 @@ const savedInYearYearsSchema = z
   .transform((value) => parseSavedInYearYears(value));
 
 const hexColorSchema = z.string().default("#000000").transform((value) => parseHexColor(value));
+const playlistSuffixSchema = z
+  .string()
+  .optional()
+  .transform((value) => parsePlaylistSuffix(value));
 
 const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
   SPOTIFY_REDIRECT_URI: z.string().url(),
   TOKEN_STORAGE_PATH: z.string().default("data/.spotify-tokens.json"),
-  AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().min(1).default("SAVED"),
-  AUTO_PLAYLISTS_PLAYLIST_SUFFIX: z.string().min(1).default("[AUTO]"),
+  AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
+  AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
   AUTO_PLAYLISTS_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
   SAVED_RECENT_COVER_COLOR: hexColorSchema,
   SAVED_IN_YEAR_COVER_COLOR: hexColorSchema,
@@ -177,4 +181,13 @@ export function parseHexColor(value: string): string {
   }
 
   return `#${raw}`;
+}
+
+export function parsePlaylistSuffix(value: string | undefined): string {
+  if (value === undefined) {
+    return "[AUTO]";
+  }
+
+  const normalized = value.trim();
+  return normalized.length === 0 ? "[AUTO]" : normalized;
 }

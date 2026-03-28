@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { parseHexColor, parseSavedInYearYears, parseSavedRecentWindows } from "../src/core/config.js";
+import {
+  parseHexColor,
+  parsePlaylistSuffix,
+  parseSavedInYearYears,
+  parseSavedRecentWindows,
+} from "../src/core/config.js";
 
 describe("auto-playlists config parsers", () => {
   it("parses, deduplicates and sorts saved recent windows", () => {
@@ -40,5 +45,15 @@ describe("auto-playlists config parsers", () => {
   it("throws on invalid hex colors", () => {
     expect(() => parseHexColor("zzz")).toThrow();
     expect(() => parseHexColor("#12345")).toThrow();
+  });
+
+  it("uses default suffix when suffix is missing or empty", () => {
+    expect(parsePlaylistSuffix(undefined)).toBe("[AUTO]");
+    expect(parsePlaylistSuffix("")).toBe("[AUTO]");
+    expect(parsePlaylistSuffix("   ")).toBe("[AUTO]");
+  });
+
+  it("preserves explicit suffix", () => {
+    expect(parsePlaylistSuffix("[SYNC]")).toBe("[SYNC]");
   });
 });

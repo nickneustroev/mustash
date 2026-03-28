@@ -129,7 +129,17 @@ SAVED_IN_YEAR_YEARS=
 2. общий runtime авто-плейлистов (`AUTO_PLAYLISTS_*`)
 3. оформление обложек (`SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR`)
 4. правила авто-плейлистов (`SAVED_RECENT_WINDOWS`, `SAVED_IN_YEAR_YEARS`)
-3. общие Spotify OAuth / proxy настройки из `.env`
+
+`AUTO_PLAYLISTS_PLAYLIST_PREFIX` можно оставить пустым:
+
+```env
+AUTO_PLAYLISTS_PLAYLIST_PREFIX=
+```
+
+Тогда имена будут без префикса, например `RECENT 50 [AUTO]` или `2024 [AUTO]`.
+5. общие Spotify OAuth / proxy настройки из `.env`
+
+Если `AUTO_PLAYLISTS_PLAYLIST_SUFFIX` не задан или пустой, используется дефолтный суффикс `[AUTO]`.
 
 ## Локальный запуск
 
