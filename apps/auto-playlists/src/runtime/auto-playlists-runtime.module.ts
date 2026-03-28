@@ -23,11 +23,13 @@ import { AutoPlaylistsOrchestratorService } from "./auto-playlists-orchestrator.
             windows: cfg.savedRecentWindows,
             playlistPrefix: cfg.autoPlaylistsPlaylistPrefix,
             playlistSuffix: cfg.autoPlaylistsPlaylistSuffix,
+            coverColor: cfg.savedRecentCoverColor,
           }),
           ...createSavedInYearDefinitions({
             years: cfg.savedInYearYears,
             playlistPrefix: cfg.autoPlaylistsPlaylistPrefix,
             playlistSuffix: cfg.autoPlaylistsPlaylistSuffix,
+            coverColor: cfg.savedInYearCoverColor,
           }),
         ];
 

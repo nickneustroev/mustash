@@ -1,10 +1,10 @@
 import sharp from "sharp";
 
-export async function generateRecentPlaylistCoverJpeg(windowSize: number, backgroundColor: string): Promise<Buffer> {
+export async function generateSavedInYearPlaylistCoverJpeg(year: number, backgroundColor: string): Promise<Buffer> {
   const width = 640;
   const height = 640;
-  const textTop = `${windowSize}`;
-  const textBottom = "recent";
+  const textTop = `${year}`;
+  const textBottom = "year";
   const textColor = pickTextColor(backgroundColor);
 
   const svg = `
@@ -16,7 +16,7 @@ export async function generateRecentPlaylistCoverJpeg(windowSize: number, backgr
     text-anchor="middle"
     fill="${textColor}"
     font-family="Helvetica, Arial, sans-serif"
-    font-size="300"
+    font-size="210"
     font-weight="700"
     dominant-baseline="middle"
   >${escapeXml(textTop)}</text>

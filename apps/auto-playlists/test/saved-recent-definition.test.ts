@@ -25,6 +25,7 @@ describe("saved recent definitions", () => {
       windows: [2, 3],
       playlistPrefix: "SAVED",
       playlistSuffix: "[AUTO]",
+      coverColor: "#000000",
     });
 
     expect(definitions).toHaveLength(2);
@@ -36,5 +37,19 @@ describe("saved recent definitions", () => {
         buildSavedTrack("ccc"),
       ]),
     ).toEqual(["spotify:track:a", "spotify:track:bb", "spotify:track:ccc"]);
+  });
+
+  it("provides cover generation for recent playlists", async () => {
+    const definitions = createSavedRecentDefinitions({
+      windows: [20],
+      playlistPrefix: "SAVED",
+      playlistSuffix: "[AUTO]",
+      coverColor: "#112233",
+    });
+
+    const cover = await definitions[0]?.buildCoverJpeg?.();
+
+    expect(cover).toBeInstanceOf(Buffer);
+    expect(cover?.length).toBeGreaterThan(0);
   });
 });

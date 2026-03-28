@@ -1,10 +1,12 @@
 import type { SavedTrackItem } from "@spotify-helper/spotify";
 import type { AutoPlaylistDefinition } from "../playlist-definitions/auto-playlist-definition.js";
+import { generateSavedInYearPlaylistCoverJpeg } from "./playlist-cover.js";
 
 export interface SavedInYearDefinitionsOptions {
   years: number[];
   playlistPrefix: string;
   playlistSuffix: string;
+  coverColor: string;
 }
 
 export function createSavedInYearDefinitions(
@@ -19,6 +21,7 @@ export function createSavedInYearDefinitions(
         .filter((track) => track.addedAt.getUTCFullYear() === year)
         .map((track) => track.trackUri);
     },
+    buildCoverJpeg: () => generateSavedInYearPlaylistCoverJpeg(year, options.coverColor),
   }));
 }
 

@@ -12,6 +12,8 @@ const savedInYearYearsSchema = z
   .optional()
   .transform((value) => parseSavedInYearYears(value));
 
+const hexColorSchema = z.string().default("#000000").transform((value) => parseHexColor(value));
+
 const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
@@ -20,6 +22,8 @@ const schema = z.object({
   AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().min(1).default("SAVED"),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: z.string().min(1).default("[AUTO]"),
   AUTO_PLAYLISTS_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
+  SAVED_RECENT_COVER_COLOR: hexColorSchema,
+  SAVED_IN_YEAR_COVER_COLOR: hexColorSchema,
   SAVED_RECENT_WINDOWS: savedRecentWindowsSchema,
   SAVED_IN_YEAR_YEARS: savedInYearYearsSchema,
   SPOTIFY_PROXY_ENABLED: z
@@ -39,6 +43,8 @@ export interface AppConfig {
   autoPlaylistsPlaylistPrefix: string;
   autoPlaylistsPlaylistSuffix: string;
   autoPlaylistsSyncIntervalMs: number;
+  savedRecentCoverColor: string;
+  savedInYearCoverColor: string;
   savedRecentWindows: number[];
   savedInYearYears: number[];
   spotifyProxyEnabled: boolean;
@@ -67,6 +73,8 @@ export function loadConfig(): AppConfig {
     autoPlaylistsPlaylistPrefix: env.AUTO_PLAYLISTS_PLAYLIST_PREFIX,
     autoPlaylistsPlaylistSuffix: env.AUTO_PLAYLISTS_PLAYLIST_SUFFIX,
     autoPlaylistsSyncIntervalMs: env.AUTO_PLAYLISTS_SYNC_INTERVAL_MS,
+    savedRecentCoverColor: env.SAVED_RECENT_COVER_COLOR,
+    savedInYearCoverColor: env.SAVED_IN_YEAR_COVER_COLOR,
     savedRecentWindows: env.SAVED_RECENT_WINDOWS,
     savedInYearYears: env.SAVED_IN_YEAR_YEARS,
     spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
@@ -88,6 +96,8 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     autoPlaylistsPlaylistPrefix: cfg.autoPlaylistsPlaylistPrefix,
     autoPlaylistsPlaylistSuffix: cfg.autoPlaylistsPlaylistSuffix,
     autoPlaylistsSyncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
+    savedRecentCoverColor: cfg.savedRecentCoverColor,
+    savedInYearCoverColor: cfg.savedInYearCoverColor,
     savedRecentWindows: cfg.savedRecentWindows.join(","),
     savedInYearYears: cfg.savedInYearYears.join(","),
     spotifyProxyEnabled: cfg.spotifyProxyEnabled,
@@ -144,4 +154,27 @@ function parseIntegerList(
   }
 
   return Array.from(new Set(parsed)).sort((a, b) => a - b);
+}
+
+export function parseHexColor(value: string): string {
+  const normalized = value.trim();
+  const match = normalized.match(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  if (!match) {
+    throw new Error(`Invalid hex color "${value}". Use #RGB or #RRGGBB.`);
+  }
+
+  const rawGroup = match[1];
+  if (!rawGroup) {
+    throw new Error(`Invalid hex color "${value}". Use #RGB or #RRGGBB.`);
+  }
+
+  const raw = rawGroup.toUpperCase();
+  if (raw.length === 3) {
+    return `#${raw
+      .split("")
+      .map((char) => `${char}${char}`)
+      .join("")}`;
+  }
+
+  return `#${raw}`;
 }

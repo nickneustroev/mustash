@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSavedInYearYears, parseSavedRecentWindows } from "../src/core/config.js";
+import { parseHexColor, parseSavedInYearYears, parseSavedRecentWindows } from "../src/core/config.js";
 
 describe("auto-playlists config parsers", () => {
   it("parses, deduplicates and sorts saved recent windows", () => {
@@ -30,5 +30,15 @@ describe("auto-playlists config parsers", () => {
   it("throws on invalid saved-in-year values", () => {
     expect(() => parseSavedInYearYears("2005")).toThrow();
     expect(() => parseSavedInYearYears("abc,2024")).toThrow();
+  });
+
+  it("normalizes valid hex colors", () => {
+    expect(parseHexColor("#000")).toBe("#000000");
+    expect(parseHexColor("1a2b3c")).toBe("#1A2B3C");
+  });
+
+  it("throws on invalid hex colors", () => {
+    expect(() => parseHexColor("zzz")).toThrow();
+    expect(() => parseHexColor("#12345")).toThrow();
   });
 });

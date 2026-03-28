@@ -25,6 +25,7 @@ describe("saved in year definitions", () => {
       years: [2023, 2024],
       playlistPrefix: "SAVED",
       playlistSuffix: "[AUTO]",
+      coverColor: "#000000",
     });
 
     expect(definitions).toHaveLength(2);
@@ -36,5 +37,19 @@ describe("saved in year definitions", () => {
         buildSavedTrack("mid-2024", "2024-06-01T12:00:00.000Z"),
       ]),
     ).toEqual(["spotify:track:early-2024", "spotify:track:mid-2024"]);
+  });
+
+  it("provides cover generation for yearly playlists", async () => {
+    const definitions = createSavedInYearDefinitions({
+      years: [2024],
+      playlistPrefix: "SAVED",
+      playlistSuffix: "[AUTO]",
+      coverColor: "#334455",
+    });
+
+    const cover = await definitions[0]?.buildCoverJpeg?.();
+
+    expect(cover).toBeInstanceOf(Buffer);
+    expect(cover?.length).toBeGreaterThan(0);
   });
 });

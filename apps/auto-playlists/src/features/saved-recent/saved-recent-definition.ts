@@ -6,6 +6,7 @@ export interface SavedRecentDefinitionsOptions {
   windows: number[];
   playlistPrefix: string;
   playlistSuffix: string;
+  coverColor: string;
 }
 
 export function createSavedRecentDefinitions(
@@ -22,7 +23,7 @@ export function createSavedRecentDefinitions(
     resolveTrackUris(savedTracks: SavedTrackItem[]): string[] {
       return savedTracks.slice(0, windowSize).map((track) => track.trackUri);
     },
-    buildCoverJpeg: () => generateRecentPlaylistCoverJpeg(windowSize),
+    buildCoverJpeg: () => generateRecentPlaylistCoverJpeg(windowSize, options.coverColor),
   }));
 }
 
