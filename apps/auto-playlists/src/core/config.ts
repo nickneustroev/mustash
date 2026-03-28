@@ -48,7 +48,7 @@ export interface AppConfig {
 }
 
 export function loadConfig(): AppConfig {
-  loadEnv();
+  loadAppEnv(".env.auto-playlists");
   const parsed = schema.safeParse(process.env);
 
   if (!parsed.success) {
@@ -75,6 +75,11 @@ export function loadConfig(): AppConfig {
     spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
     spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
   };
+}
+
+function loadAppEnv(appEnvFile: string): void {
+  loadEnv({ path: path.resolve(process.cwd(), appEnvFile) });
+  loadEnv();
 }
 
 export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | number | boolean> {

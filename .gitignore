@@ -2,6 +2,8 @@ node_modules/
 apps/tracker/dist/
 apps/auto-playlists/dist/
 .env
+.env.tracker
+.env.auto-playlists
 .spotify-tokens.json
 .history-state.json
 coverage/

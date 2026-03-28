@@ -70,7 +70,7 @@ export interface AppConfig {
 }
 
 export function loadConfig(): AppConfig {
-  loadEnv();
+  loadAppEnv(".env.tracker");
   const parsed = schema.safeParse(process.env);
 
   if (!parsed.success) {
@@ -107,6 +107,11 @@ export function loadConfig(): AppConfig {
     backupCron: env.BACKUP_CRON,
     backupRetentionDays: env.BACKUP_RETENTION_DAYS,
   };
+}
+
+function loadAppEnv(appEnvFile: string): void {
+  loadEnv({ path: path.resolve(process.cwd(), appEnvFile) });
+  loadEnv();
 }
 
 export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | number | boolean> {

@@ -8,9 +8,26 @@ services:
       - .env
     environment:
       DATABASE_URL: file:/app/data/history.db
-      TOKEN_STORAGE_PATH: /app/data/.spotify-tokens.json
+      TOKEN_STORAGE_PATH: /app/data/.spotify-tokens.tracker.json
     ports:
       - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  auto-playlists:
+    build:
+      context: .
+      dockerfile: apps/auto-playlists/Dockerfile
+    container_name: spotify-helper-auto-playlists
+    env_file:
+      - .env
+    environment:
+      SPOTIFY_REDIRECT_URI: ${AUTO_PLAYLISTS_SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3001/callback}
+      SPOTIFY_LISTEN_PORT: ${AUTO_PLAYLISTS_SPOTIFY_LISTEN_PORT:-3000}
+      TOKEN_STORAGE_PATH: /app/data/.spotify-tokens.auto-playlists.json
+    ports:
+      - "${AUTO_PLAYLISTS_HOST_PORT:-3001}:3000"
     volumes:
       - ./data:/app/data
     restart: unless-stopped
