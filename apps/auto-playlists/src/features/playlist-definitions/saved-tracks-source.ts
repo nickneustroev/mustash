@@ -10,6 +10,7 @@ export class SavedTracksSource {
   constructor(
     private readonly spotifyClient: SpotifyClient,
     private readonly pageSize = 50,
+    private readonly maxScanAttempts = 3,
   ) {}
 
   public async getSavedTracks(requirements: SavedTracksFetchRequirements = {}): Promise<SavedTrackItem[]> {
@@ -18,25 +19,36 @@ export class SavedTracksSource {
   }
 
   public async getAllSavedTracks(): Promise<SavedTrackItem[]> {
-    const collectedTracks: SavedTrackItem[] = [];
-    let offset = 0;
+    let lastCollectedTracks: SavedTrackItem[] = [];
 
-    while (true) {
-      const page = await this.spotifyClient.getSavedTracksPage(this.pageSize, offset);
-      if (page.tracks.length === 0) {
+    for (let attempt = 1; attempt <= this.maxScanAttempts; attempt += 1) {
+      const firstPage = await this.spotifyClient.getSavedTracksPage(this.pageSize, 0);
+      const collectedTracks = [...firstPage.tracks];
+      let offset = firstPage.tracks.length;
+
+      while (offset > 0 && offset < firstPage.total) {
+        const page = await this.spotifyClient.getSavedTracksPage(this.pageSize, offset);
+        if (page.tracks.length === 0) {
+          break;
+        }
+
+        collectedTracks.push(...page.tracks);
+        offset += page.tracks.length;
+      }
+
+      lastCollectedTracks = dedupeSavedTracks(collectedTracks);
+
+      if (firstPage.total <= this.pageSize || attempt === this.maxScanAttempts) {
         break;
       }
 
-      collectedTracks.push(...page.tracks);
-
-      if (page.tracks.length < this.pageSize || offset + page.tracks.length >= page.total) {
+      const verificationPage = await this.spotifyClient.getSavedTracksPage(this.pageSize, 0);
+      if (isStableFirstPage(firstPage, verificationPage)) {
         break;
       }
-
-      offset += this.pageSize;
     }
 
-    return collectedTracks.sort((left, right) => right.addedAt.getTime() - left.addedAt.getTime());
+    return lastCollectedTracks.sort((left, right) => right.addedAt.getTime() - left.addedAt.getTime());
   }
 }
 
@@ -65,5 +77,38 @@ export function filterSavedTracks(
     }
 
     return true;
+  });
+}
+
+function dedupeSavedTracks(tracks: SavedTrackItem[]): SavedTrackItem[] {
+  const seenTrackIds = new Set<string>();
+  const deduped: SavedTrackItem[] = [];
+
+  for (const track of tracks) {
+    if (seenTrackIds.has(track.trackId)) {
+      continue;
+    }
+    seenTrackIds.add(track.trackId);
+    deduped.push(track);
+  }
+
+  return deduped;
+}
+
+function isStableFirstPage(
+  left: { tracks: SavedTrackItem[]; total: number },
+  right: { tracks: SavedTrackItem[]; total: number },
+): boolean {
+  if (left.total !== right.total || left.tracks.length !== right.tracks.length) {
+    return false;
+  }
+
+  return left.tracks.every((track, index) => {
+    const candidate = right.tracks[index];
+    return (
+      candidate !== undefined &&
+      track.trackId === candidate.trackId &&
+      track.addedAt.getTime() === candidate.addedAt.getTime()
+    );
   });
 }
