@@ -1,1 +1,1 @@
-export { SpotifyRateLimitError } from "@spotify-helper/spotify";
+export { SpotifyRateLimitError } from "../spotify/errors.js";

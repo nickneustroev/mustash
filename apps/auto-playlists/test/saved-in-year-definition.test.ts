@@ -1,9 +1,9 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { describe, expect, it } from "vitest";
 import {
   buildSavedInYearPlaylistName,
   createSavedInYearDefinitions,
 } from "../src/features/saved-in-year/saved-in-year-definition.js";
+import type { SavedTrackItem } from "../src/shared/types.js";
 
 function buildSavedTrack(trackId: string, addedAt: string): SavedTrackItem {
   return {

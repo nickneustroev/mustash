@@ -1,11 +1,5 @@
 import { Module } from "@nestjs/common";
 import type { PrismaClient } from "@prisma/client";
-import {
-  createPrismaClient,
-  PrismaAppStateRepository,
-  PrismaArchiveRepository,
-  PrismaHistoryRepository,
-} from "@spotify-helper/db";
 import { type AppConfig } from "../core/config.js";
 import { CoreModule } from "../core/core.module.js";
 import {
@@ -17,6 +11,10 @@ import {
   PRISMA_CLIENT,
 } from "../core/nest.tokens.js";
 import type { Logger } from "../shared/types.js";
+import { PrismaAppStateRepository } from "./app-state-repository.js";
+import { PrismaArchiveRepository } from "./archive-repository.js";
+import { PrismaHistoryRepository } from "./history-repository.js";
+import { createPrismaClient } from "./prisma-client.js";
 
 @Module({
   imports: [CoreModule],

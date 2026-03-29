@@ -1,6 +1,6 @@
-import type { AppStateRepository } from "@spotify-helper/db";
 import { describe, expect, it, vi } from "vitest";
-import type { Logger, OAuthTokens } from "@spotify-helper/spotify";
+import type { AppStateRepository } from "../src/persistence/types.js";
+import type { Logger, OAuthTokens } from "../src/shared/types.js";
 import { AppStateOAuthTokenStore } from "../src/spotify/app-state-oauth-token-store.js";
 
 describe("AppStateOAuthTokenStore", () => {

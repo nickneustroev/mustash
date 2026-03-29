@@ -1,5 +1,5 @@
-import type { AppStateRepository } from "@spotify-helper/db";
-import type { Logger, OAuthTokenStore, OAuthTokens } from "@spotify-helper/spotify";
+import type { AppStateRepository } from "../persistence/types.js";
+import type { Logger, OAuthTokenStore, OAuthTokens } from "../shared/types.js";
 
 const DEFAULT_APP_STATE_KEY = "spotify_oauth_tokens:auto_playlists";
 

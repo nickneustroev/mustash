@@ -1,12 +1,11 @@
 import { Module } from "@nestjs/common";
-import type { AppStateRepository } from "@spotify-helper/db";
-import type { SpotifyAuthConfig, SpotifyClientConfig } from "@spotify-helper/spotify";
 import { AuthManager } from "./auth-manager.js";
 import { type AppConfig } from "../core/config.js";
 import { CoreModule } from "../core/core.module.js";
 import { APP_CONFIG, APP_LOGGER, APP_STATE_REPOSITORY, AUTH_MANAGER, FETCH_IMPL, SPOTIFY_CLIENT } from "../core/nest.tokens.js";
 import { PersistenceModule } from "../persistence/persistence.module.js";
-import type { Logger } from "../shared/types.js";
+import type { AppStateRepository } from "../persistence/types.js";
+import type { Logger, SpotifyAuthConfig, SpotifyClientConfig } from "../shared/types.js";
 import { AppStateOAuthTokenStore } from "./app-state-oauth-token-store.js";
 import { SpotifyClient } from "./spotify-client.js";
 

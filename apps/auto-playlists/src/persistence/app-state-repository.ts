@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type { Logger } from "@spotify-helper/spotify";
+import type { Logger } from "../shared/types.js";
+
 export class PrismaAppStateRepository {
   constructor(
     private readonly prisma: PrismaClient,

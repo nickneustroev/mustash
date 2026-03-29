@@ -1,6 +1,4 @@
 import { Module } from "@nestjs/common";
-import type { AppStateRepository, ArchiveRepository, HistoryRepository } from "@spotify-helper/db";
-import { estimateLivePlayedAt } from "@spotify-helper/db";
 import { type AppConfig } from "../core/config.js";
 import { CoreModule } from "../core/core.module.js";
 import {
@@ -19,6 +17,8 @@ import { SavedTracksSource } from "../features/playlist-definitions/saved-tracks
 import { createSavedInYearDefinitions } from "../features/saved-in-year/saved-in-year-definition.js";
 import { createSavedRecentDefinitions } from "../features/saved-recent/saved-recent-definition.js";
 import { PersistenceModule } from "../persistence/persistence.module.js";
+import { estimateLivePlayedAt } from "../persistence/history-repository.js";
+import type { AppStateRepository, ArchiveRepository, HistoryRepository } from "../persistence/types.js";
 import type { Logger } from "../shared/types.js";
 import type { SpotifyClient } from "../spotify/spotify-client.js";
 import { SpotifyModule } from "../spotify/spotify.module.js";

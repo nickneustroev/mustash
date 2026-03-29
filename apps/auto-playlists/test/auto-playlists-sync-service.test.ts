@@ -1,5 +1,3 @@
-import type { AppStateRepository, ArchiveRepository } from "@spotify-helper/db";
-import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { describe, expect, it, vi } from "vitest";
 import {
   AutoPlaylistsSyncService,
@@ -7,7 +5,8 @@ import {
 } from "../src/features/playlist-definitions/auto-playlists-sync-service.js";
 import type { AutoPlaylistDefinition } from "../src/features/playlist-definitions/auto-playlist-definition.js";
 import type { SavedTracksSource } from "../src/features/playlist-definitions/saved-tracks-source.js";
-import type { Logger } from "../src/shared/types.js";
+import type { AppStateRepository, ArchiveRepository } from "../src/persistence/types.js";
+import type { Logger, SavedTrackItem } from "../src/shared/types.js";
 import type { SpotifyClient } from "../src/spotify/spotify-client.js";
 
 const log: Logger = {

@@ -1,4 +1,4 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
+import type { SavedTrackItem } from "../../shared/types.js";
 
 export interface AutoPlaylistDefinition {
   key: string;

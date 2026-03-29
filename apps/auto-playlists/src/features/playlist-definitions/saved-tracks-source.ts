@@ -1,4 +1,4 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
+import type { SavedTrackItem } from "../../shared/types.js";
 import type { SpotifyClient } from "../../spotify/spotify-client.js";
 
 export interface SavedTracksFetchRequirements {

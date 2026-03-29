@@ -9,9 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-COPY packages/db ./packages/db
-COPY packages/spotify ./packages/spotify
+COPY prisma.config.ts ./
+COPY prisma ./prisma
 RUN npm ci
+RUN npx prisma generate
 
 COPY apps/auto-playlists/tsconfig.json ./apps/auto-playlists/tsconfig.json
 COPY apps/auto-playlists/src ./apps/auto-playlists/src

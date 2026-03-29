@@ -1,5 +1,3 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
-
 export type HistorySource = "live" | "backfill";
 
 export interface HistoryEntry {

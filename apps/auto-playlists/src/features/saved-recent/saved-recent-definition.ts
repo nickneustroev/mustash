@@ -1,4 +1,4 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
+import type { SavedTrackItem } from "../../shared/types.js";
 import type { AutoPlaylistDefinition } from "../playlist-definitions/auto-playlist-definition.js";
 import { generateRecentPlaylistCoverJpeg } from "./playlist-cover.js";
 

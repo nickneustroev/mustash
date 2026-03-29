@@ -1,9 +1,9 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { describe, expect, it, vi } from "vitest";
 import {
   filterSavedTracks,
   SavedTracksSource,
 } from "../src/features/playlist-definitions/saved-tracks-source.js";
+import type { SavedTrackItem } from "../src/shared/types.js";
 import type { SpotifyClient } from "../src/spotify/spotify-client.js";
 
 function buildSavedTrack(trackId: string, addedAt: string): SavedTrackItem {

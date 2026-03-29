@@ -1,5 +1,5 @@
-import type { AppStateRepository, ArchiveRepository } from "@spotify-helper/db";
-import type { SavedTrackItem } from "@spotify-helper/spotify";
+import type { AppStateRepository, ArchiveRepository } from "../../persistence/types.js";
+import type { SavedTrackItem } from "../../shared/types.js";
 import { SpotifyRateLimitError } from "../../shared/errors.js";
 import type { Logger } from "../../shared/types.js";
 import type { SpotifyClient } from "../../spotify/spotify-client.js";

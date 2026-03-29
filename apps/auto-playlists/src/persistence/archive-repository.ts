@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import type { Logger } from "@spotify-helper/spotify";
+import type { Logger } from "../shared/types.js";
 import type { ArchivedTrackItem } from "./types.js";
+
 export class PrismaArchiveRepository {
   constructor(
     private readonly prisma: PrismaClient,

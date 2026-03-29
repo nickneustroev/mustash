@@ -1,9 +1,9 @@
-import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { describe, expect, it } from "vitest";
 import {
   buildSavedRecentPlaylistName,
   createSavedRecentDefinitions,
 } from "../src/features/saved-recent/saved-recent-definition.js";
+import type { SavedTrackItem } from "../src/shared/types.js";
 
 function buildSavedTrack(trackId: string): SavedTrackItem {
   return {

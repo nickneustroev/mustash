@@ -17,8 +17,42 @@ export interface OAuthTokens {
   expiresAtEpochMs: number;
 }
 
+export interface OAuthTokenStore {
+  loadTokens(): Promise<OAuthTokens | null>;
+  saveTokens(tokens: OAuthTokens): Promise<void>;
+}
+
 export interface Logger {
   info(message: string): void;
   warn(message: string): void;
   error(message: string): void;
+}
+
+export interface RecentlyPlayedItem {
+  trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
+  playedAt: Date;
+}
+
+export interface SavedTrackItem {
+  trackId: string;
+  trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
+  addedAt: Date;
+}
+
+export interface SpotifyAuthConfig {
+  spotifyClientId: string;
+  spotifyClientSecret: string;
+  spotifyRedirectUri: string;
+  requestTimeoutMs: number;
+  oauthScopes: string[];
+}
+
+export interface SpotifyClientConfig {
+  requestTimeoutMs: number;
+  spotifyProxyEnabled: boolean;
+  spotifyProxyUrl: string;
 }
