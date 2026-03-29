@@ -1,6 +1,5 @@
 node_modules
 dist
-apps/tracker/dist
 .git
 .history-state.json
 .spotify-tokens.json

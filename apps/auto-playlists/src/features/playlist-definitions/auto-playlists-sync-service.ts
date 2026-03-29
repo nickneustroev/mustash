@@ -1,8 +1,14 @@
+import type { AppStateRepository, ArchiveRepository } from "@spotify-helper/db";
+import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { SpotifyRateLimitError } from "../../shared/errors.js";
 import type { Logger } from "../../shared/types.js";
 import type { SpotifyClient } from "../../spotify/spotify-client.js";
 import type { AutoPlaylistDefinition } from "./auto-playlist-definition.js";
-import type { SavedTracksFetchRequirements, SavedTracksSource } from "./saved-tracks-source.js";
+import {
+  filterSavedTracks,
+  type SavedTracksFetchRequirements,
+  type SavedTracksSource,
+} from "./saved-tracks-source.js";
 
 export interface AutoPlaylistsSyncOptions {
   definitions: AutoPlaylistDefinition[];
@@ -10,6 +16,16 @@ export interface AutoPlaylistsSyncOptions {
   playlistPrivate: boolean;
   savedTracksRequirements?: SavedTracksFetchRequirements;
 }
+
+interface SavedTrackSnapshotItem {
+  trackId: string;
+  trackUri: string;
+  trackName: string | null;
+  artistName: string | null;
+  addedAtIso: string;
+}
+
+const SAVED_TRACKS_SNAPSHOT_KEY = "auto_playlists:saved_tracks_snapshot";
 
 export class AutoPlaylistsSyncService {
   private timer: NodeJS.Timeout | null = null;
@@ -22,6 +38,8 @@ export class AutoPlaylistsSyncService {
   constructor(
     private readonly spotifyClient: SpotifyClient,
     private readonly savedTracksSource: SavedTracksSource,
+    private readonly archiveRepository: ArchiveRepository,
+    private readonly appStateRepository: AppStateRepository,
     private readonly logger: Logger,
     private readonly options: AutoPlaylistsSyncOptions,
   ) {}
@@ -62,7 +80,9 @@ export class AutoPlaylistsSyncService {
     this.running = true;
     try {
       await this.ensurePlaylists();
-      const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
+      const allSavedTracks = await this.savedTracksSource.getAllSavedTracks();
+      await this.syncRemovedTracksArchive(allSavedTracks);
+      const savedTracks = filterSavedTracks(allSavedTracks, this.options.savedTracksRequirements);
 
       for (const definition of this.options.definitions) {
         const playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
@@ -131,6 +151,73 @@ export class AutoPlaylistsSyncService {
         );
       }
     }
+  }
+
+  private async syncRemovedTracksArchive(currentSavedTracks: SavedTrackItem[]): Promise<void> {
+    const previousSnapshot = await this.readSavedTracksSnapshot();
+    if (previousSnapshot.length > 0) {
+      const currentTrackIds = new Set(currentSavedTracks.map((track) => track.trackId));
+      const now = new Date();
+
+      for (const track of previousSnapshot) {
+        if (currentTrackIds.has(track.trackId)) {
+          continue;
+        }
+
+        const existingArchive = await this.archiveRepository.getArchivedTrack(track.trackId);
+        if (existingArchive) {
+          continue;
+        }
+
+        await this.archiveRepository.upsertArchivedTrack({
+          trackId: track.trackId,
+          trackUri: track.trackUri,
+          trackName: track.trackName,
+          artistName: track.artistName,
+          addedAt: track.addedAt,
+          removedAt: now,
+        });
+      }
+    }
+
+    await this.writeSavedTracksSnapshot(currentSavedTracks);
+  }
+
+  private async readSavedTracksSnapshot(): Promise<SavedTrackItem[]> {
+    const raw = await this.appStateRepository.getValue(SAVED_TRACKS_SNAPSHOT_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as SavedTrackSnapshotItem[];
+      return parsed
+        .map((item) => ({
+          trackId: item.trackId,
+          trackUri: item.trackUri,
+          trackName: item.trackName,
+          artistName: item.artistName,
+          addedAt: new Date(item.addedAtIso),
+        }))
+        .filter((item) => !Number.isNaN(item.addedAt.getTime()));
+    } catch {
+      this.logger.warn("Saved tracks snapshot in AppState is invalid. Rebuilding snapshot.");
+      return [];
+    }
+  }
+
+  private async writeSavedTracksSnapshot(savedTracks: SavedTrackItem[]): Promise<void> {
+    const payload = JSON.stringify(
+      savedTracks.map((track) => ({
+        trackId: track.trackId,
+        trackUri: track.trackUri,
+        trackName: track.trackName,
+        artistName: track.artistName,
+        addedAtIso: track.addedAt.toISOString(),
+      } satisfies SavedTrackSnapshotItem)),
+    );
+
+    await this.appStateRepository.setValue(SAVED_TRACKS_SNAPSHOT_KEY, payload);
   }
 }
 

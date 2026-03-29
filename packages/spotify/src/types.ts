@@ -17,6 +17,11 @@ export interface OAuthTokens {
   expiresAtEpochMs: number;
 }
 
+export interface OAuthTokenStore {
+  loadTokens(): Promise<OAuthTokens | null>;
+  saveTokens(tokens: OAuthTokens): Promise<void>;
+}
+
 export interface Logger {
   info(message: string): void;
   warn(message: string): void;
@@ -42,7 +47,6 @@ export interface SpotifyAuthConfig {
   spotifyClientId: string;
   spotifyClientSecret: string;
   spotifyRedirectUri: string;
-  tokenStoragePath: string;
   requestTimeoutMs: number;
   oauthScopes: string[];
 }

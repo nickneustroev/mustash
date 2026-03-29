@@ -1,20 +1,4 @@
 services:
-  tracker:
-    build:
-      context: .
-      dockerfile: apps/tracker/Dockerfile
-    container_name: spotify-helper-tracker
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: file:/app/data/history.db
-      TOKEN_STORAGE_PATH: /app/data/.spotify-tokens.tracker.json
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-
   auto-playlists:
     build:
       context: .
@@ -23,58 +7,8 @@ services:
     env_file:
       - .env
     environment:
-      SPOTIFY_REDIRECT_URI: ${AUTO_PLAYLISTS_SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3001/callback}
+      SPOTIFY_REDIRECT_URI: ${AUTO_PLAYLISTS_SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/callback}
       SPOTIFY_LISTEN_PORT: ${AUTO_PLAYLISTS_SPOTIFY_LISTEN_PORT:-3000}
-      TOKEN_STORAGE_PATH: /app/data/.spotify-tokens.auto-playlists.json
     ports:
-      - "${AUTO_PLAYLISTS_HOST_PORT:-3001}:3000"
-    volumes:
-      - ./data:/app/data
+      - "${AUTO_PLAYLISTS_HOST_PORT:-3000}:3000"
     restart: unless-stopped
-
-  backup-cron:
-    build:
-      context: .
-      dockerfile: apps/backup/Dockerfile
-    container_name: spotify-helper-backup-cron
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: file:/app/data/history.db
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-
-  prisma-studio:
-    build:
-      context: .
-      dockerfile: apps/studio/Dockerfile
-    container_name: spotify-helper-prisma-studio
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: file:/app/data/history.db
-    expose:
-      - "5555"
-    volumes:
-      - ./data:/app/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.middlewares.prisma-studio-basicauth.basicauth.users=admin:$2y$05$autKTE.9xWrb5tJfic5Gge3XeKqqHreEj7lykPSYCreAu1dB1AjnW"
-      - "traefik.http.services.prisma-studio.loadbalancer.server.port=5555"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "require('http').get('http://127.0.0.1:5555/', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
-    restart: unless-stopped
-
-volumes:
-  data:

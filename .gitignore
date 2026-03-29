@@ -1,5 +1,4 @@
 node_modules/
-apps/tracker/dist/
 apps/auto-playlists/dist/
 .env
 .env.tracker

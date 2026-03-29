@@ -1,25 +1,32 @@
 import { Module } from "@nestjs/common";
+import type { AppStateRepository } from "@spotify-helper/db";
 import type { SpotifyAuthConfig, SpotifyClientConfig } from "@spotify-helper/spotify";
 import { AuthManager } from "./auth-manager.js";
 import { type AppConfig } from "../core/config.js";
 import { CoreModule } from "../core/core.module.js";
-import { APP_CONFIG, APP_LOGGER, AUTH_MANAGER, FETCH_IMPL, SPOTIFY_CLIENT } from "../core/nest.tokens.js";
+import { APP_CONFIG, APP_LOGGER, APP_STATE_REPOSITORY, AUTH_MANAGER, FETCH_IMPL, SPOTIFY_CLIENT } from "../core/nest.tokens.js";
+import { PersistenceModule } from "../persistence/persistence.module.js";
 import type { Logger } from "../shared/types.js";
+import { AppStateOAuthTokenStore } from "./app-state-oauth-token-store.js";
 import { SpotifyClient } from "./spotify-client.js";
 
 @Module({
-  imports: [CoreModule],
+  imports: [CoreModule, PersistenceModule],
   providers: [
     {
       provide: AUTH_MANAGER,
-      inject: [APP_CONFIG, APP_LOGGER, FETCH_IMPL],
-      useFactory: (cfg: AppConfig, log: Logger, fetchImpl: typeof fetch) =>
+      inject: [APP_CONFIG, APP_STATE_REPOSITORY, APP_LOGGER, FETCH_IMPL],
+      useFactory: (
+        cfg: AppConfig,
+        appStateRepository: AppStateRepository,
+        log: Logger,
+        fetchImpl: typeof fetch,
+      ) =>
         new AuthManager(
           {
             spotifyClientId: cfg.spotifyClientId,
             spotifyClientSecret: cfg.spotifyClientSecret,
             spotifyRedirectUri: cfg.spotifyRedirectUri,
-            tokenStoragePath: cfg.tokenStoragePath,
             requestTimeoutMs: cfg.requestTimeoutMs,
             oauthScopes: [
               "user-library-read",
@@ -28,6 +35,7 @@ import { SpotifyClient } from "./spotify-client.js";
               "playlist-read-private",
             ],
           } satisfies SpotifyAuthConfig,
+          new AppStateOAuthTokenStore(appStateRepository, log),
           log,
           fetchImpl,
         ),

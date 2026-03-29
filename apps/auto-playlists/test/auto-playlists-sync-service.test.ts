@@ -1,3 +1,4 @@
+import type { AppStateRepository, ArchiveRepository } from "@spotify-helper/db";
 import type { SavedTrackItem } from "@spotify-helper/spotify";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -13,6 +14,22 @@ const log: Logger = {
   info: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
+};
+
+const archiveRepository: ArchiveRepository = {
+  upsertArchivedTrack: vi.fn(),
+  getArchivedTrack: vi.fn().mockResolvedValue(null),
+  getAllArchivedTracks: vi.fn(),
+  getAllArchivedTrackIds: vi.fn(),
+  getArchivedTrackCount: vi.fn(),
+  close: vi.fn(),
+};
+
+const appStateRepository: AppStateRepository = {
+  getValue: vi.fn().mockResolvedValue(null),
+  setValue: vi.fn().mockResolvedValue(undefined),
+  deleteValue: vi.fn(),
+  close: vi.fn(),
 };
 
 function buildSavedTrack(trackId: string): SavedTrackItem {
@@ -45,7 +62,7 @@ describe("AutoPlaylistsSyncService", () => {
     } as unknown as SpotifyClient;
 
     const savedTracksSource = {
-      getSavedTracks: vi
+      getAllSavedTracks: vi
         .fn()
         .mockResolvedValueOnce([buildSavedTrack("a"), buildSavedTrack("bb"), buildSavedTrack("ccc")])
         .mockResolvedValueOnce([buildSavedTrack("a"), buildSavedTrack("bb"), buildSavedTrack("ccc")]),
@@ -68,11 +85,18 @@ describe("AutoPlaylistsSyncService", () => {
       },
     ];
 
-    const service = new AutoPlaylistsSyncService(spotifyClient, savedTracksSource, log, {
-      definitions,
-      syncIntervalMs: 15000,
-      playlistPrivate: true,
-    });
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      appStateRepository,
+      log,
+      {
+        definitions,
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+      },
+    );
 
     service.start();
     await vi.waitFor(() => {
@@ -83,45 +107,78 @@ describe("AutoPlaylistsSyncService", () => {
 
     expect(replacePlaylistItems).toHaveBeenCalledTimes(2);
     expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
+    expect(appStateRepository.setValue).toHaveBeenCalledTimes(2);
   });
 
-  it("does not upload cover when playlist already exists", async () => {
-    const getCurrentUserId = vi.fn().mockResolvedValue("user-1");
-    const findPlaylistByName = vi.fn().mockResolvedValueOnce({ id: "p2", name: "SAVED RECENT 2 [AUTO]" });
-    const createPlaylist = vi.fn().mockResolvedValue({ id: "unused", name: "unused" });
-    const replacePlaylistItems = vi.fn().mockResolvedValue(undefined);
-    const uploadPlaylistCoverImage = vi.fn().mockResolvedValue(undefined);
-
+  it("archives removed tracks from previous snapshot", async () => {
     const spotifyClient = {
-      getCurrentUserId,
-      findPlaylistByName,
-      createPlaylist,
-      replacePlaylistItems,
-      uploadPlaylistCoverImage,
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems: vi.fn().mockResolvedValue(undefined),
+      uploadPlaylistCoverImage: vi.fn(),
     } as unknown as SpotifyClient;
 
     const savedTracksSource = {
-      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a"), buildSavedTrack("bb")]),
+      getAllSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
     } as unknown as SavedTracksSource;
 
-    const service = new AutoPlaylistsSyncService(spotifyClient, savedTracksSource, log, {
-      definitions: [
-        {
-          key: "saved-recent:2",
-          playlistName: "SAVED RECENT 2 [AUTO]",
-          playlistDescription: "Auto-maintained recent saved tracks (2).",
-          resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
-          buildCoverJpeg: async () => Buffer.from("cover-2"),
-        },
-      ],
-      syncIntervalMs: 15000,
-      playlistPrivate: true,
-    });
+    const localAppState: AppStateRepository = {
+      ...appStateRepository,
+      getValue: vi.fn().mockResolvedValue(
+        JSON.stringify([
+          {
+            trackId: "a",
+            trackUri: "spotify:track:a",
+            trackName: "a",
+            artistName: "Artist",
+            addedAtIso: new Date("2026-03-28T00:00:01.000Z").toISOString(),
+          },
+          {
+            trackId: "bb",
+            trackUri: "spotify:track:bb",
+            trackName: "bb",
+            artistName: "Artist",
+            addedAtIso: new Date("2026-03-28T00:00:02.000Z").toISOString(),
+          },
+        ]),
+      ),
+      setValue: vi.fn().mockResolvedValue(undefined),
+    };
 
+    const localArchive: ArchiveRepository = {
+      ...archiveRepository,
+      getArchivedTrack: vi.fn().mockResolvedValue(null),
+      upsertArchivedTrack: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      localArchive,
+      localAppState,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
     await service.syncNow();
 
-    expect(createPlaylist).toHaveBeenCalledTimes(0);
-    expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(0);
+    expect(localArchive.upsertArchivedTrack).toHaveBeenCalledTimes(1);
+    expect(localArchive.upsertArchivedTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ trackId: "bb", trackUri: "spotify:track:bb" }),
+    );
   });
 
   it("hashes uri arrays deterministically", () => {

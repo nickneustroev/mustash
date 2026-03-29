@@ -1,10 +1,8 @@
 import crypto from "node:crypto";
-import fs from "node:fs/promises";
 import http from "node:http";
-import path from "node:path";
 import { exec } from "node:child_process";
 import { URL } from "node:url";
-import type { Logger, OAuthTokens, SpotifyAuthConfig } from "./types.js";
+import type { Logger, OAuthTokenStore, OAuthTokens, SpotifyAuthConfig } from "./types.js";
 
 interface SpotifyTokenResponse {
   access_token: string;
@@ -15,29 +13,36 @@ interface SpotifyTokenResponse {
 export class AuthManager {
   private tokens: OAuthTokens | null = null;
   private readonly cfg: SpotifyAuthConfig;
+  private readonly tokenStore: OAuthTokenStore;
   private readonly log: Logger;
   private readonly fetchImpl: typeof fetch;
 
-  constructor(cfg: SpotifyAuthConfig, log: Logger, fetchImpl: typeof fetch = fetch) {
+  constructor(
+    cfg: SpotifyAuthConfig,
+    tokenStore: OAuthTokenStore,
+    log: Logger,
+    fetchImpl: typeof fetch = fetch,
+  ) {
     this.cfg = cfg;
+    this.tokenStore = tokenStore;
     this.log = log;
     this.fetchImpl = fetchImpl;
   }
 
   public async initialize(): Promise<void> {
-    this.tokens = await this.readTokensFromDisk();
+    this.tokens = await this.tokenStore.loadTokens();
 
     if (!this.tokens) {
-      this.log.info("No local tokens found, starting Spotify login.");
+      this.log.info("No stored Spotify tokens found, starting login.");
       this.tokens = await this.authorizeInteractive();
-      await this.writeTokensToDisk(this.tokens);
+      await this.persistTokens(this.tokens);
       return;
     }
 
     if (Date.now() + 15000 >= this.tokens.expiresAtEpochMs) {
       this.log.info("Access token is near expiration, refreshing.");
       this.tokens = await this.refreshAccessToken(this.tokens.refreshToken);
-      await this.writeTokensToDisk(this.tokens);
+      await this.persistTokens(this.tokens);
     }
   }
 
@@ -52,7 +57,7 @@ export class AuthManager {
 
     if (Date.now() + 5000 >= this.tokens.expiresAtEpochMs) {
       this.tokens = await this.refreshAccessToken(this.tokens.refreshToken);
-      await this.writeTokensToDisk(this.tokens);
+      await this.persistTokens(this.tokens);
     }
 
     return this.tokens.accessToken;
@@ -64,11 +69,11 @@ export class AuthManager {
     }
 
     if (!this.tokens) {
-      throw new Error("Cannot refresh token: no local tokens.");
+      throw new Error("Cannot refresh token: no stored tokens.");
     }
 
     this.tokens = await this.refreshAccessToken(this.tokens.refreshToken);
-    await this.writeTokensToDisk(this.tokens);
+    await this.persistTokens(this.tokens);
   }
 
   private async authorizeInteractive(): Promise<OAuthTokens> {
@@ -239,45 +244,8 @@ export class AuthManager {
     };
   }
 
-  private async readTokensFromDisk(): Promise<OAuthTokens | null> {
-    try {
-      const stat = await fs.stat(this.cfg.tokenStoragePath);
-      if (stat.isDirectory()) {
-        this.log.warn(
-          `Token storage path points to a directory, expected a file: ${this.cfg.tokenStoragePath}`,
-        );
-        return null;
-      }
-      const raw = await fs.readFile(this.cfg.tokenStoragePath, "utf-8");
-      const parsed = JSON.parse(raw) as Partial<OAuthTokens>;
-      if (!parsed.accessToken || !parsed.refreshToken || !parsed.expiresAtEpochMs) {
-        this.log.warn("Token file exists but is invalid. A new login is required.");
-        return null;
-      }
-      return {
-        accessToken: parsed.accessToken,
-        refreshToken: parsed.refreshToken,
-        expiresAtEpochMs: parsed.expiresAtEpochMs,
-      };
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        const err = error as NodeJS.ErrnoException;
-        this.log.warn(
-          `Unable to read token file (${this.cfg.tokenStoragePath}): ${err.code ?? "UNKNOWN"} ${err.message}`,
-        );
-      }
-      return null;
-    }
-  }
-
-  private async writeTokensToDisk(tokens: OAuthTokens): Promise<void> {
-    await fs.mkdir(path.dirname(this.cfg.tokenStoragePath), { recursive: true });
-    const existing = await fs.stat(this.cfg.tokenStoragePath).catch(() => null);
-    if (existing?.isDirectory()) {
-      throw new Error(`Token storage path is a directory, expected a file: ${this.cfg.tokenStoragePath}`);
-    }
-    await fs.writeFile(this.cfg.tokenStoragePath, `${JSON.stringify(tokens, null, 2)}\n`, "utf-8");
-    this.log.info(`Spotify tokens saved to ${this.cfg.tokenStoragePath}.`);
+  private async persistTokens(tokens: OAuthTokens): Promise<void> {
+    await this.tokenStore.saveTokens(tokens);
   }
 }
 

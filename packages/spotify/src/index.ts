@@ -4,6 +4,7 @@ export { SpotifyClient, normalizeCurrentlyPlaying } from "./spotify-client.js";
 export type {
   ItemType,
   Logger,
+  OAuthTokenStore,
   OAuthTokens,
   PlaybackSnapshot,
   RecentlyPlayedItem,

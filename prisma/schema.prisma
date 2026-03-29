@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
+    provider = "postgresql"
 }
 
 enum PlayedTrackSource {
@@ -30,17 +30,6 @@ model AppState {
     key       String   @id
     value     String
     updatedAt DateTime @updatedAt
-}
-
-model SavedTrack {
-    trackId        String   @id
-    trackUri       String   @unique
-    trackName      String?
-    artistName     String?
-    addedAt        DateTime
-    updatedAt      DateTime @updatedAt
-
-    @@index([trackId])
 }
 
 model ArchivedTrack {

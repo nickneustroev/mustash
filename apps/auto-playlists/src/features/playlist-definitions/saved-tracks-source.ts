@@ -13,12 +13,13 @@ export class SavedTracksSource {
   ) {}
 
   public async getSavedTracks(requirements: SavedTracksFetchRequirements = {}): Promise<SavedTrackItem[]> {
+    const allTracks = await this.getAllSavedTracks();
+    return filterSavedTracks(allTracks, requirements);
+  }
+
+  public async getAllSavedTracks(): Promise<SavedTrackItem[]> {
     const collectedTracks: SavedTrackItem[] = [];
     let offset = 0;
-    const targetRecentCount = Math.max(0, requirements.maxRecentTracks ?? 0);
-    const minSavedYear = requirements.minSavedYear;
-    const hasCustomStopCondition = targetRecentCount > 0 || minSavedYear !== undefined;
-    let fetchedTrackCount = 0;
 
     while (true) {
       const page = await this.spotifyClient.getSavedTracksPage(this.pageSize, offset);
@@ -26,24 +27,9 @@ export class SavedTracksSource {
         break;
       }
 
-      fetchedTrackCount += page.tracks.length;
+      collectedTracks.push(...page.tracks);
 
-      const filteredTracks = targetRecentCount > 0 || minSavedYear === undefined
-        ? page.tracks
-        : page.tracks.filter((track) => track.addedAt.getUTCFullYear() >= minSavedYear);
-
-      collectedTracks.push(...filteredTracks);
-
-      const lastTrack = page.tracks[page.tracks.length - 1];
-      const recentSatisfied = targetRecentCount === 0 || fetchedTrackCount >= targetRecentCount;
-      const yearSatisfied =
-        minSavedYear === undefined || (lastTrack !== undefined && lastTrack.addedAt.getUTCFullYear() < minSavedYear);
-
-      if (
-        page.tracks.length < this.pageSize ||
-        offset + page.tracks.length >= page.total ||
-        (hasCustomStopCondition && recentSatisfied && yearSatisfied)
-      ) {
+      if (page.tracks.length < this.pageSize || offset + page.tracks.length >= page.total) {
         break;
       }
 
@@ -52,4 +38,32 @@ export class SavedTracksSource {
 
     return collectedTracks.sort((left, right) => right.addedAt.getTime() - left.addedAt.getTime());
   }
+}
+
+export function filterSavedTracks(
+  tracks: SavedTrackItem[],
+  requirements: SavedTracksFetchRequirements = {},
+): SavedTrackItem[] {
+  const sortedTracks = [...tracks].sort((left, right) => right.addedAt.getTime() - left.addedAt.getTime());
+  const targetRecentCount = Math.max(0, requirements.maxRecentTracks ?? 0);
+  const minSavedYear = requirements.minSavedYear;
+
+  return sortedTracks.filter((track, index) => {
+    const recentMatched = targetRecentCount > 0 && index < targetRecentCount;
+    const yearMatched = minSavedYear !== undefined && track.addedAt.getUTCFullYear() >= minSavedYear;
+
+    if (targetRecentCount > 0 && minSavedYear !== undefined) {
+      return recentMatched || yearMatched;
+    }
+
+    if (targetRecentCount > 0) {
+      return recentMatched;
+    }
+
+    if (minSavedYear !== undefined) {
+      return yearMatched;
+    }
+
+    return true;
+  });
 }

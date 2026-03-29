@@ -22,7 +22,13 @@ const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
   SPOTIFY_REDIRECT_URI: z.string().url(),
-  TOKEN_STORAGE_PATH: z.string().default("data/.spotify-tokens.json"),
+  POLL_INTERVAL_MS: z.coerce.number().int().min(500).default(2500),
+  PRINT_ON_START: z
+    .string()
+    .optional()
+    .transform((v) => v === "true")
+    .default(true),
+  DATABASE_URL: z.string().min(1),
   AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
   AUTO_PLAYLISTS_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
@@ -42,7 +48,9 @@ export interface AppConfig {
   spotifyClientId: string;
   spotifyClientSecret: string;
   spotifyRedirectUri: string;
-  tokenStoragePath: string;
+  pollIntervalMs: number;
+  printOnStart: boolean;
+  databaseUrl: string;
   requestTimeoutMs: number;
   autoPlaylistsPlaylistPrefix: string;
   autoPlaylistsPlaylistSuffix: string;
@@ -72,7 +80,9 @@ export function loadConfig(): AppConfig {
     spotifyClientId: env.SPOTIFY_CLIENT_ID,
     spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET,
     spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI,
-    tokenStoragePath: path.resolve(process.cwd(), env.TOKEN_STORAGE_PATH),
+    pollIntervalMs: env.POLL_INTERVAL_MS,
+    printOnStart: env.PRINT_ON_START,
+    databaseUrl: env.DATABASE_URL,
     requestTimeoutMs: 5000,
     autoPlaylistsPlaylistPrefix: env.AUTO_PLAYLISTS_PLAYLIST_PREFIX,
     autoPlaylistsPlaylistSuffix: env.AUTO_PLAYLISTS_PLAYLIST_SUFFIX,
@@ -95,7 +105,9 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
   return {
     spotifyClientId: cfg.spotifyClientId,
     spotifyRedirectUri: cfg.spotifyRedirectUri,
-    tokenStoragePath: cfg.tokenStoragePath,
+    pollIntervalMs: cfg.pollIntervalMs,
+    printOnStart: cfg.printOnStart,
+    databaseUrl: cfg.databaseUrl,
     requestTimeoutMs: cfg.requestTimeoutMs,
     autoPlaylistsPlaylistPrefix: cfg.autoPlaylistsPlaylistPrefix,
     autoPlaylistsPlaylistSuffix: cfg.autoPlaylistsPlaylistSuffix,

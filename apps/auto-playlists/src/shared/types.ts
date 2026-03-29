@@ -1,3 +1,16 @@
+export type ItemType = "track" | "episode" | "ad" | "unknown";
+
+export interface PlaybackSnapshot {
+  isPlaying: boolean;
+  itemType: ItemType;
+  trackId: string | null;
+  trackUri: string | null;
+  trackName: string | null;
+  artists: string[];
+  progressMs: number | null;
+  fetchedAtEpochMs: number;
+}
+
 export interface OAuthTokens {
   accessToken: string;
   refreshToken: string;
