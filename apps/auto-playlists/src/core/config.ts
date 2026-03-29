@@ -1,5 +1,4 @@
 import { config as loadEnv } from "dotenv";
-import path from "node:path";
 import { z } from "zod";
 
 const savedRecentWindowsSchema = z
@@ -64,7 +63,7 @@ export interface AppConfig {
 }
 
 export function loadConfig(): AppConfig {
-  loadAppEnv(".env.auto-playlists");
+  loadAppEnv();
   const parsed = schema.safeParse(process.env);
 
   if (!parsed.success) {
@@ -96,8 +95,7 @@ export function loadConfig(): AppConfig {
   };
 }
 
-function loadAppEnv(appEnvFile: string): void {
-  loadEnv({ path: path.resolve(process.cwd(), appEnvFile) });
+function loadAppEnv(): void {
   loadEnv();
 }
 

@@ -36,18 +36,12 @@
 
 ## Переменные окружения
 
-Конфигурация разделена на два уровня:
-
-1. `.env` - общие переменные.
-2. `.env.auto-playlists` - опциональные override для `apps/auto-playlists`.
+Конфигурация хранится в одном файле `.env`.
 
 Порядок применения:
 
 1. системные env-переменные
-2. `.env.auto-playlists`
-3. `.env`
-
-### Общие переменные
+2. `.env`
 
 Скопируй `.env.example` в `.env`:
 
@@ -60,38 +54,30 @@ SPOTIFY_LISTEN_PORT=3000
 SPOTIFY_PROXY_ENABLED=false
 SPOTIFY_PROXY_URL=
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper
-```
+POLL_INTERVAL_MS=2500
+PRINT_ON_START=true
 
-`SPOTIFY_LISTEN_PORT` используется OAuth-слоем для локального callback-сервера. Если не задан, порт берется из `SPOTIFY_REDIRECT_URI`.
-
-### Контракт `auto-playlists`
-
-Если `auto-playlists` должен иметь свои значения, скопируй `.env.auto-playlists.example` в `.env.auto-playlists`:
-
-```env
-# Если нужен отдельный callback-порт:
-# SPOTIFY_REDIRECT_URI=http://127.0.0.1:3001/callback
-# SPOTIFY_LISTEN_PORT=3001
-
-AUTO_PLAYLISTS_PLAYLIST_PREFIX=SAVED
+AUTO_PLAYLISTS_PLAYLIST_PREFIX=
 AUTO_PLAYLISTS_PLAYLIST_SUFFIX=[AUTO]
 AUTO_PLAYLISTS_SYNC_INTERVAL_MS=15000
 
 SAVED_RECENT_COVER_COLOR=000000
-SAVED_IN_YEAR_COVER_COLOR=000000
+SAVED_IN_YEAR_COVER_COLOR=060E73
 
-SAVED_RECENT_WINDOWS=20,50,100
-SAVED_IN_YEAR_YEARS=
+SAVED_RECENT_WINDOWS=50,200
+SAVED_IN_YEAR_YEARS=2024,2025
 ```
 
-`auto-playlists` использует:
+`SPOTIFY_LISTEN_PORT` используется OAuth-слоем для локального callback-сервера. Если не задан, порт берется из `SPOTIFY_REDIRECT_URI`.
+
+`auto-playlists` использует из `.env`:
 
 1. Postgres (`DATABASE_URL`) и хранение OAuth-токенов в `AppState`
 2. playback polling (`POLL_INTERVAL_MS`, `PRINT_ON_START`)
 3. runtime авто-плейлистов (`AUTO_PLAYLISTS_*`)
 4. оформление обложек (`SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR`)
 5. правила авто-плейлистов (`SAVED_RECENT_WINDOWS`, `SAVED_IN_YEAR_YEARS`)
-6. общие Spotify OAuth / proxy настройки из `.env`
+6. Spotify OAuth / proxy настройки
 
 `AUTO_PLAYLISTS_PLAYLIST_PREFIX` можно оставить пустым:
 
@@ -111,8 +97,7 @@ AUTO_PLAYLISTS_PLAYLIST_PREFIX=
 `npm run prisma:generate`
 3. Применить миграции:
 `npm run prisma:migrate:dev`
-4. При необходимости создать `.env.auto-playlists`
-5. Запустить dev-режим:
+4. Запустить dev-режим:
 `npm run dev:auto-playlists`
 
 ### Production-запуск
@@ -177,7 +162,7 @@ docker-compose logs -f auto-playlists
 
 ## Примечания по безопасности
 
-1. Не коммить `.env` и `.env.auto-playlists`.
+1. Не коммить `.env`.
 2. Не публикуй `Client Secret`.
 3. Используй приложение только локально или в доверенном окружении.
 

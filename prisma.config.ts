@@ -1,9 +1,7 @@
 import { config as loadEnv } from "dotenv";
-import path from "node:path";
 import { defineConfig } from "prisma/config";
 
-loadEnv({ path: path.resolve(process.cwd(), ".env.auto-playlists") });
-loadEnv({ path: path.resolve(process.cwd(), ".env") });
+loadEnv();
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
