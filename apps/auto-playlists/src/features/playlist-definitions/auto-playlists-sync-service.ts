@@ -182,6 +182,9 @@ export class AutoPlaylistsSyncService {
           addedAt: track.addedAt,
           removedAt: now,
         });
+        this.logger.info(
+          `Archived removed track: ${track.artistName ?? "Unknown artist"} - ${track.trackName ?? track.trackId} (${track.trackId}).`,
+        );
       }
     }
 

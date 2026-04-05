@@ -184,6 +184,7 @@ describe("AutoPlaylistsSyncService", () => {
     expect(localArchive.upsertArchivedTrack).toHaveBeenCalledWith(
       expect.objectContaining({ trackId: "bb", trackUri: "spotify:track:bb" }),
     );
+    expect(log.info).toHaveBeenCalledWith("Archived removed track: Artist - bb (bb).");
   });
 
   it("hashes uri arrays deterministically", () => {
