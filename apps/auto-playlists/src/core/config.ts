@@ -22,6 +22,7 @@ const schema = z.object({
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
   SPOTIFY_REDIRECT_URI: z.string().url(),
   POLL_INTERVAL_MS: z.coerce.number().int().min(500).default(2500),
+  SPOTIFY_MIN_REQUEST_GAP_MS: z.coerce.number().int().min(0).default(0),
   PRINT_ON_START: z
     .string()
     .optional()
@@ -48,6 +49,7 @@ export interface AppConfig {
   spotifyClientSecret: string;
   spotifyRedirectUri: string;
   pollIntervalMs: number;
+  spotifyMinRequestGapMs: number;
   printOnStart: boolean;
   databaseUrl: string;
   requestTimeoutMs: number;
@@ -80,6 +82,7 @@ export function loadConfig(): AppConfig {
     spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET,
     spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI,
     pollIntervalMs: env.POLL_INTERVAL_MS,
+    spotifyMinRequestGapMs: env.SPOTIFY_MIN_REQUEST_GAP_MS,
     printOnStart: env.PRINT_ON_START,
     databaseUrl: env.DATABASE_URL,
     requestTimeoutMs: 5000,
@@ -104,6 +107,7 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     spotifyClientId: cfg.spotifyClientId,
     spotifyRedirectUri: cfg.spotifyRedirectUri,
     pollIntervalMs: cfg.pollIntervalMs,
+    spotifyMinRequestGapMs: cfg.spotifyMinRequestGapMs,
     printOnStart: cfg.printOnStart,
     databaseUrl: cfg.databaseUrl,
     requestTimeoutMs: cfg.requestTimeoutMs,

@@ -52,6 +52,7 @@ import { SpotifyClient } from "./spotify-client.js";
           authManager,
           {
             requestTimeoutMs: cfg.requestTimeoutMs,
+            minRequestGapMs: cfg.spotifyMinRequestGapMs,
             spotifyProxyEnabled: cfg.spotifyProxyEnabled,
             spotifyProxyUrl: cfg.spotifyProxyUrl,
           } satisfies SpotifyClientConfig,

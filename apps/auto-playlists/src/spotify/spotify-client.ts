@@ -60,6 +60,7 @@ type TransportMode = "direct" | "proxy";
 
 export class SpotifyClient {
   private static readonly RATE_LIMIT_RETRY_ATTEMPTS = 2;
+  private static readonly RATE_LIMIT_BUFFER_MS = 250;
   private readonly auth: AuthManager;
   private readonly cfg: SpotifyClientConfig;
   private readonly log: Logger;
@@ -67,6 +68,8 @@ export class SpotifyClient {
   private readonly proxyDispatcher: unknown | null;
   private transportMode: TransportMode;
   private rateLimitedUntilEpochMs = 0;
+  private lastRequestStartedAtEpochMs = 0;
+  private requestQueue: Promise<void> = Promise.resolve();
 
   constructor(auth: AuthManager, cfg: SpotifyClientConfig, log: Logger, fetchImpl: typeof fetch = fetch) {
     this.auth = auth;
@@ -286,7 +289,19 @@ export class SpotifyClient {
     allowRetryOnUnauthorized: boolean,
     rateLimitRetryAttempts = SpotifyClient.RATE_LIMIT_RETRY_ATTEMPTS,
   ): Promise<Response> {
+    return this.runInRequestQueue(() =>
+      this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized, rateLimitRetryAttempts),
+    );
+  }
+
+  private async requestWithAuthInternal(
+    url: string,
+    init: RequestInit,
+    allowRetryOnUnauthorized: boolean,
+    rateLimitRetryAttempts = SpotifyClient.RATE_LIMIT_RETRY_ATTEMPTS,
+  ): Promise<Response> {
     await this.waitForRateLimitWindow();
+    await this.waitForRequestGap();
 
     const accessToken = await this.auth.getAccessToken();
     const headers = new Headers(init.headers ?? {});
@@ -297,7 +312,7 @@ export class SpotifyClient {
     if (response.status === 401 && allowRetryOnUnauthorized) {
       this.log.warn("Spotify API returned 401, refreshing token and retrying once.");
       await this.auth.handleUnauthorized();
-      return this.requestWithAuth(url, init, false, rateLimitRetryAttempts);
+      return this.requestWithAuthInternal(url, init, false, rateLimitRetryAttempts);
     }
 
     if (response.status === 429) {
@@ -309,10 +324,10 @@ export class SpotifyClient {
       }
 
       this.log.warn(
-        `Spotify API returned 429. Waiting ${retryAfterSeconds}s before retry (${rateLimitRetryAttempts} retries left).`,
+        `Spotify API returned 429 for ${describeRequest(init.method, url)}. Waiting ${retryAfterSeconds}s before retry (${rateLimitRetryAttempts} retries left).`,
       );
       await sleep(retryAfterSeconds * 1000);
-      return this.requestWithAuth(url, init, allowRetryOnUnauthorized, rateLimitRetryAttempts - 1);
+      return this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized, rateLimitRetryAttempts - 1);
     }
 
     if (!response.ok) {
@@ -321,7 +336,7 @@ export class SpotifyClient {
       if (this.shouldRetryWithProxy(response.status, payload)) {
         this.transportMode = "proxy";
         this.log.warn("Spotify API geo-block detected (403). Retrying request via configured proxy.");
-        return this.requestWithAuth(url, init, allowRetryOnUnauthorized);
+        return this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized);
       }
 
       if (isSpotifyGeoBlock(response.status, payload) && !this.canUseProxy()) {
@@ -334,6 +349,22 @@ export class SpotifyClient {
     }
 
     return response;
+  }
+
+  private async runInRequestQueue<T>(operation: () => Promise<T>): Promise<T> {
+    const previous = this.requestQueue;
+    let release!: () => void;
+    this.requestQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    await previous.catch(() => undefined);
+
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
   }
 
   private async fetchWithTransport(
@@ -368,10 +399,19 @@ export class SpotifyClient {
   }
 
   private bumpRateLimitWindow(retryAfterSeconds: number): void {
-    const candidateEpochMs = Date.now() + Math.max(0, retryAfterSeconds) * 1000;
+    const candidateEpochMs =
+      Date.now() + Math.max(0, retryAfterSeconds) * 1000 + SpotifyClient.RATE_LIMIT_BUFFER_MS;
     if (candidateEpochMs > this.rateLimitedUntilEpochMs) {
       this.rateLimitedUntilEpochMs = candidateEpochMs;
     }
+  }
+
+  private async waitForRequestGap(): Promise<void> {
+    const waitMs = this.lastRequestStartedAtEpochMs + this.cfg.minRequestGapMs - Date.now();
+    if (waitMs > 0) {
+      await sleep(waitMs);
+    }
+    this.lastRequestStartedAtEpochMs = Date.now();
   }
 
   private async waitForRateLimitWindow(): Promise<void> {
@@ -459,4 +499,15 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, Math.max(0, ms));
   });
+}
+
+function describeRequest(method: string | undefined, url: string): string {
+  const normalizedMethod = (method ?? "GET").toUpperCase();
+
+  try {
+    const parsed = new URL(url);
+    return `${normalizedMethod} ${parsed.pathname}`;
+  } catch {
+    return `${normalizedMethod} ${url}`;
+  }
 }
