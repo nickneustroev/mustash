@@ -79,10 +79,12 @@ export class AutoPlaylistsSyncService {
 
     this.running = true;
     try {
+      this.logger.info("Sync cycle started.");
       await this.ensurePlaylists();
       const allSavedTracks = await this.savedTracksSource.getAllSavedTracks();
       await this.syncRemovedTracksArchive(allSavedTracks);
       const savedTracks = filterSavedTracks(allSavedTracks, this.options.savedTracksRequirements);
+      let syncedPlaylists = 0;
 
       for (const definition of this.options.definitions) {
         const playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
@@ -98,8 +100,11 @@ export class AutoPlaylistsSyncService {
 
         await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
         this.lastHashesByDefinitionKey.set(definition.key, hash);
+        syncedPlaylists += 1;
         this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
       }
+
+      this.logger.info(`Sync cycle completed (updated=${syncedPlaylists}/${this.options.definitions.length}).`);
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
         this.nextAllowedSyncAtEpochMs = Date.now() + error.retryAfterSeconds * 1000;

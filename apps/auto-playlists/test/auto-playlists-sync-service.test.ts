@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AutoPlaylistsSyncService,
   hashTrackUris,
@@ -42,6 +42,10 @@ function buildSavedTrack(trackId: string): SavedTrackItem {
 }
 
 describe("AutoPlaylistsSyncService", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("skips replace calls when playlist content did not change", async () => {
     const getCurrentUserId = vi.fn().mockResolvedValue("user-1");
     const findPlaylistByName = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(null);
@@ -107,6 +111,8 @@ describe("AutoPlaylistsSyncService", () => {
     expect(replacePlaylistItems).toHaveBeenCalledTimes(2);
     expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
     expect(appStateRepository.setValue).toHaveBeenCalledTimes(2);
+    expect(log.info).toHaveBeenCalledWith("Sync cycle started.");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (updated=0/2).");
   });
 
   it("archives removed tracks from previous snapshot", async () => {
@@ -183,5 +189,46 @@ describe("AutoPlaylistsSyncService", () => {
   it("hashes uri arrays deterministically", () => {
     expect(hashTrackUris(["a", "b"])).toBe(hashTrackUris(["a", "b"]));
     expect(hashTrackUris(["a", "b"])).not.toBe(hashTrackUris(["b", "a"]));
+  });
+
+  it("logs completed sync with updated playlist count", async () => {
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems: vi.fn().mockResolvedValue(undefined),
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getAllSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      appStateRepository,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(log.info).toHaveBeenCalledWith("Sync cycle started.");
+    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (updated=1/1).");
   });
 });
