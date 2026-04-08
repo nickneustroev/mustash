@@ -28,6 +28,7 @@ interface SavedTrackSnapshotItem {
 }
 
 const SAVED_TRACKS_SNAPSHOT_KEY = "auto_playlists:saved_tracks_snapshot";
+const PLAYLIST_ID_KEY_PREFIX = "auto_playlists:playlist_id:";
 
 export class AutoPlaylistsSyncService {
   private timer: NodeJS.Timeout | null = null;
@@ -103,7 +104,21 @@ export class AutoPlaylistsSyncService {
           continue;
         }
 
-        await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
+        try {
+          await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
+        } catch (error) {
+          if (isMissingPlaylistError(error)) {
+            await this.forgetPlaylistId(definition.key);
+            this.lastHashesByDefinitionKey.delete(definition.key);
+            this.logger.warn(
+              `Playlist "${definition.playlistName}" is no longer available. Cached id dropped, will recreate on next sync.`,
+            );
+            continue;
+          }
+
+          throw error;
+        }
+
         this.lastHashesByDefinitionKey.set(definition.key, hash);
         syncedPlaylists += 1;
         this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
@@ -134,9 +149,15 @@ export class AutoPlaylistsSyncService {
         continue;
       }
 
+      const cachedPlaylistId = await this.readPlaylistId(definition.key);
+      if (cachedPlaylistId) {
+        this.playlistIdsByDefinitionKey.set(definition.key, cachedPlaylistId);
+        continue;
+      }
+
       const existing = await this.spotifyClient.findPlaylistByName(definition.playlistName);
       if (existing) {
-        this.playlistIdsByDefinitionKey.set(definition.key, existing.id);
+        await this.rememberPlaylistId(definition.key, existing.id);
         continue;
       }
 
@@ -146,7 +167,7 @@ export class AutoPlaylistsSyncService {
         definition.playlistDescription,
         this.options.playlistPrivate,
       );
-      this.playlistIdsByDefinitionKey.set(definition.key, created.id);
+      await this.rememberPlaylistId(definition.key, created.id);
       this.logger.info(`Created (${definition.playlistName}).`);
 
       if (!definition.buildCoverJpeg) {
@@ -234,8 +255,34 @@ export class AutoPlaylistsSyncService {
 
     await this.appStateRepository.setValue(SAVED_TRACKS_SNAPSHOT_KEY, payload);
   }
+
+  private async readPlaylistId(definitionKey: string): Promise<string | null> {
+    const raw = await this.appStateRepository.getValue(buildPlaylistIdStateKey(definitionKey));
+    return raw && raw.trim().length > 0 ? raw : null;
+  }
+
+  private async rememberPlaylistId(definitionKey: string, playlistId: string): Promise<void> {
+    this.playlistIdsByDefinitionKey.set(definitionKey, playlistId);
+    await this.appStateRepository.setValue(buildPlaylistIdStateKey(definitionKey), playlistId);
+  }
+
+  private async forgetPlaylistId(definitionKey: string): Promise<void> {
+    this.playlistIdsByDefinitionKey.delete(definitionKey);
+    await this.appStateRepository.deleteValue(buildPlaylistIdStateKey(definitionKey));
+  }
 }
 
 export function hashTrackUris(trackUris: string[]): string {
   return `${trackUris.length}:${trackUris.join("|")}`;
+}
+
+function buildPlaylistIdStateKey(definitionKey: string): string {
+  return `${PLAYLIST_ID_KEY_PREFIX}${definitionKey}`;
+}
+
+function isMissingPlaylistError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.message.includes("Spotify request failed (404)") || error.message.includes("Spotify request failed (403)"))
+  );
 }
