@@ -99,7 +99,7 @@ describe("AutoPlaylistsSyncService", () => {
         definitions,
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "fast",
+        syncModeName: "frequent",
       },
     );
 
@@ -113,8 +113,8 @@ describe("AutoPlaylistsSyncService", () => {
     expect(replacePlaylistItems).toHaveBeenCalledTimes(2);
     expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
     expect(appStateRepository.setValue).toHaveBeenCalledTimes(2);
-    expect(log.info).toHaveBeenCalledWith("Sync cycle started (fast).");
-    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (fast, updated=0/2).");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle started (frequent).");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (frequent, updated=0/2).");
   });
 
   it("archives removed tracks from previous snapshot", async () => {
@@ -278,7 +278,7 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "fast",
+        syncModeName: "frequent",
       },
     );
 
@@ -333,7 +333,7 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "fast",
+        syncModeName: "frequent",
       },
     );
 
@@ -378,7 +378,7 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "fast",
+        syncModeName: "frequent",
         savedTracksRequirements: { maxRecentTracks: 2 },
       },
     );
@@ -419,7 +419,7 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "fast",
+        syncModeName: "frequent",
       },
     );
 

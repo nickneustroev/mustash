@@ -31,8 +31,8 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
-  AUTO_PLAYLISTS_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(15000),
-  AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(3600000),
+  AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(600000),
+  AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(10800000),
   SAVED_RECENT_COVER_COLOR: hexColorSchema,
   SAVED_IN_YEAR_COVER_COLOR: hexColorSchema,
   SAVED_RECENT_WINDOWS: savedRecentWindowsSchema,
@@ -56,7 +56,7 @@ export interface AppConfig {
   requestTimeoutMs: number;
   autoPlaylistsPlaylistPrefix: string;
   autoPlaylistsPlaylistSuffix: string;
-  autoPlaylistsSyncIntervalMs: number;
+  autoPlaylistsFrequentSyncIntervalMs: number;
   autoPlaylistsFullSyncIntervalMs: number;
   savedRecentCoverColor: string;
   savedInYearCoverColor: string;
@@ -90,7 +90,7 @@ export function loadConfig(): AppConfig {
     requestTimeoutMs: 5000,
     autoPlaylistsPlaylistPrefix: env.AUTO_PLAYLISTS_PLAYLIST_PREFIX,
     autoPlaylistsPlaylistSuffix: env.AUTO_PLAYLISTS_PLAYLIST_SUFFIX,
-    autoPlaylistsSyncIntervalMs: env.AUTO_PLAYLISTS_SYNC_INTERVAL_MS,
+    autoPlaylistsFrequentSyncIntervalMs: env.AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS,
     autoPlaylistsFullSyncIntervalMs: env.AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS,
     savedRecentCoverColor: env.SAVED_RECENT_COVER_COLOR,
     savedInYearCoverColor: env.SAVED_IN_YEAR_COVER_COLOR,
@@ -116,7 +116,7 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     requestTimeoutMs: cfg.requestTimeoutMs,
     autoPlaylistsPlaylistPrefix: cfg.autoPlaylistsPlaylistPrefix,
     autoPlaylistsPlaylistSuffix: cfg.autoPlaylistsPlaylistSuffix,
-    autoPlaylistsSyncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
+    autoPlaylistsFrequentSyncIntervalMs: cfg.autoPlaylistsFrequentSyncIntervalMs,
     autoPlaylistsFullSyncIntervalMs: cfg.autoPlaylistsFullSyncIntervalMs,
     savedRecentCoverColor: cfg.savedRecentCoverColor,
     savedInYearCoverColor: cfg.savedInYearCoverColor,

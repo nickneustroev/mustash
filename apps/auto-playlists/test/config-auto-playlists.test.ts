@@ -67,4 +67,28 @@ describe("auto-playlists config parsers", () => {
 
     expect(loadConfig().autoPlaylistsFullSyncIntervalMs).toBe(7200000);
   });
+
+  it("prefers frequent sync interval env name", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+    process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
+    process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper_test";
+    process.env.AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS = "45000";
+
+    expect(loadConfig().autoPlaylistsFrequentSyncIntervalMs).toBe(45000);
+  });
+
+  it("uses default frequent and full sync intervals when env values are missing", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+    process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
+    process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper_test";
+    delete process.env.AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS;
+    delete process.env.AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS;
+
+    const config = loadConfig();
+
+    expect(config.autoPlaylistsFrequentSyncIntervalMs).toBe(600000);
+    expect(config.autoPlaylistsFullSyncIntervalMs).toBe(10800000);
+  });
 });

@@ -104,9 +104,9 @@ import { TrackWatcher } from "./track-watcher.js";
           log,
           {
             definitions: recentDefinitions,
-            syncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
+            syncIntervalMs: cfg.autoPlaylistsFrequentSyncIntervalMs,
             playlistPrivate: true,
-            syncModeName: "fast",
+            syncModeName: "frequent",
             syncRemovedTracksArchive: false,
             savedTracksRequirements: {
               maxRecentTracks,
