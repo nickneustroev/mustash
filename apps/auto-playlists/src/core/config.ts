@@ -102,7 +102,7 @@ export function loadConfig(): AppConfig {
 }
 
 function loadAppEnv(): void {
-  loadEnv();
+  loadEnv({ quiet: true });
 }
 
 export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | number | boolean> {
