@@ -8,6 +8,7 @@ import type { SavedTracksSource } from "../src/features/playlist-definitions/sav
 import type { AppStateRepository, ArchiveRepository } from "../src/persistence/types.js";
 import type { Logger, SavedTrackItem } from "../src/shared/types.js";
 import type { SpotifyClient } from "../src/spotify/spotify-client.js";
+import { SpotifyRateLimitError } from "../src/shared/errors.js";
 
 const log: Logger = {
   info: vi.fn(),
@@ -65,7 +66,7 @@ describe("AutoPlaylistsSyncService", () => {
     } as unknown as SpotifyClient;
 
     const savedTracksSource = {
-      getAllSavedTracks: vi
+      getSavedTracks: vi
         .fn()
         .mockResolvedValueOnce([buildSavedTrack("a"), buildSavedTrack("bb"), buildSavedTrack("ccc")])
         .mockResolvedValueOnce([buildSavedTrack("a"), buildSavedTrack("bb"), buildSavedTrack("ccc")]),
@@ -98,6 +99,7 @@ describe("AutoPlaylistsSyncService", () => {
         definitions,
         syncIntervalMs: 15000,
         playlistPrivate: true,
+        syncModeName: "fast",
       },
     );
 
@@ -110,9 +112,9 @@ describe("AutoPlaylistsSyncService", () => {
 
     expect(replacePlaylistItems).toHaveBeenCalledTimes(2);
     expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
-    expect(appStateRepository.setValue).toHaveBeenCalledTimes(2);
-    expect(log.info).toHaveBeenCalledWith("Sync cycle started.");
-    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (updated=0/2).");
+    expect(appStateRepository.setValue).toHaveBeenCalledTimes(0);
+    expect(log.info).toHaveBeenCalledWith("Sync cycle started (fast).");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (fast, updated=0/2).");
   });
 
   it("archives removed tracks from previous snapshot", async () => {
@@ -125,7 +127,7 @@ describe("AutoPlaylistsSyncService", () => {
     } as unknown as SpotifyClient;
 
     const savedTracksSource = {
-      getAllSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
     } as unknown as SavedTracksSource;
 
     const localAppState: AppStateRepository = {
@@ -174,6 +176,8 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
+        syncModeName: "full",
+        syncRemovedTracksArchive: true,
       },
     );
 
@@ -202,7 +206,7 @@ describe("AutoPlaylistsSyncService", () => {
     } as unknown as SpotifyClient;
 
     const savedTracksSource = {
-      getAllSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
     } as unknown as SavedTracksSource;
 
     const service = new AutoPlaylistsSyncService(
@@ -222,14 +226,99 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
+        syncModeName: "full",
+        syncRemovedTracksArchive: true,
       },
     );
 
     (service as unknown as { stopped: boolean }).stopped = false;
     await service.syncNow();
 
-    expect(log.info).toHaveBeenCalledWith("Sync cycle started.");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle started (full).");
     expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
-    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (updated=1/1).");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (full, updated=1/1).");
+  });
+
+  it("uses saved track requirements instead of forcing full catalog fetch", async () => {
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems: vi.fn().mockResolvedValue(undefined),
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const getSavedTracks = vi.fn().mockResolvedValue([buildSavedTrack("a"), buildSavedTrack("bb")]);
+    const savedTracksSource = {
+      getSavedTracks,
+      getAllSavedTracks: vi.fn(),
+    } as unknown as SavedTracksSource;
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      appStateRepository,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "fast",
+        savedTracksRequirements: { maxRecentTracks: 2 },
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(getSavedTracks).toHaveBeenCalledWith({ maxRecentTracks: 2 });
+  });
+
+  it("backs off when Spotify rate limits the current sync mode", async () => {
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockRejectedValue(new SpotifyRateLimitError(30)),
+      findPlaylistByName: vi.fn(),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems: vi.fn(),
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn(),
+    } as unknown as SavedTracksSource;
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      appStateRepository,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: () => [],
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "fast",
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Sync rate-limited. Retry after 30s."));
   });
 });

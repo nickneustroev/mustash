@@ -33,12 +33,12 @@ describe("Nest bootstrap lifecycle", () => {
 
     expect(AuthManager.prototype.initialize).toHaveBeenCalledTimes(1);
     expect(TrackWatcher.prototype.start).toHaveBeenCalledTimes(1);
-    expect(AutoPlaylistsSyncService.prototype.start).toHaveBeenCalledTimes(1);
+    expect(AutoPlaylistsSyncService.prototype.start).toHaveBeenCalledTimes(2);
 
     await app.close();
 
     expect(TrackWatcher.prototype.stop).toHaveBeenCalledTimes(1);
-    expect(AutoPlaylistsSyncService.prototype.stop).toHaveBeenCalledTimes(1);
+    expect(AutoPlaylistsSyncService.prototype.stop).toHaveBeenCalledTimes(2);
     expect(PrismaClient.prototype.$disconnect).toHaveBeenCalledTimes(1);
   });
 });

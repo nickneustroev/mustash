@@ -14,8 +14,16 @@ export class SavedTracksSource {
   ) {}
 
   public async getSavedTracks(requirements: SavedTracksFetchRequirements = {}): Promise<SavedTrackItem[]> {
-    const allTracks = await this.getAllSavedTracks();
-    return filterSavedTracks(allTracks, requirements);
+    if (shouldFetchAllSavedTracks(requirements)) {
+      return this.getAllSavedTracks();
+    }
+
+    const maxRecentTracks = Math.max(0, requirements.maxRecentTracks ?? 0);
+    if (maxRecentTracks > 0) {
+      return this.getRecentSavedTracks(maxRecentTracks);
+    }
+
+    return this.getAllSavedTracks();
   }
 
   public async getAllSavedTracks(): Promise<SavedTrackItem[]> {
@@ -49,6 +57,33 @@ export class SavedTracksSource {
     }
 
     return lastCollectedTracks.sort((left, right) => right.addedAt.getTime() - left.addedAt.getTime());
+  }
+
+  public async getRecentSavedTracks(limit: number): Promise<SavedTrackItem[]> {
+    if (limit <= 0) {
+      return [];
+    }
+
+    const collectedTracks: SavedTrackItem[] = [];
+    let offset = 0;
+
+    while (collectedTracks.length < limit) {
+      const page = await this.spotifyClient.getSavedTracksPage(this.pageSize, offset);
+      if (page.tracks.length === 0) {
+        break;
+      }
+
+      collectedTracks.push(...page.tracks);
+      offset += page.tracks.length;
+
+      if (offset >= page.total) {
+        break;
+      }
+    }
+
+    return dedupeSavedTracks(collectedTracks)
+      .sort((left, right) => right.addedAt.getTime() - left.addedAt.getTime())
+      .slice(0, limit);
   }
 }
 
@@ -93,6 +128,10 @@ function dedupeSavedTracks(tracks: SavedTrackItem[]): SavedTrackItem[] {
   }
 
   return deduped;
+}
+
+function shouldFetchAllSavedTracks(requirements: SavedTracksFetchRequirements): boolean {
+  return requirements.minSavedYear !== undefined || (requirements.maxRecentTracks ?? 0) <= 0;
 }
 
 function isStableFirstPage(

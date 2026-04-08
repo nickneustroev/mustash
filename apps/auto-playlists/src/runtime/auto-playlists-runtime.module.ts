@@ -6,7 +6,8 @@ import {
   APP_LOGGER,
   APP_STATE_REPOSITORY,
   ARCHIVE_REPOSITORY,
-  AUTO_PLAYLISTS_SYNC_SERVICE,
+  AUTO_PLAYLISTS_FAST_SYNC_SERVICE,
+  AUTO_PLAYLISTS_FULL_SYNC_SERVICE,
   CONSOLE_NOTIFIER,
   HISTORY_REPOSITORY,
   SPOTIFY_CLIENT,
@@ -73,7 +74,7 @@ import { TrackWatcher } from "./track-watcher.js";
         }),
     },
     {
-      provide: AUTO_PLAYLISTS_SYNC_SERVICE,
+      provide: AUTO_PLAYLISTS_FAST_SYNC_SERVICE,
       inject: [SPOTIFY_CLIENT, ARCHIVE_REPOSITORY, APP_STATE_REPOSITORY, APP_LOGGER, APP_CONFIG],
       useFactory: (
         spotifyClient: SpotifyClient,
@@ -82,8 +83,48 @@ import { TrackWatcher } from "./track-watcher.js";
         log: Logger,
         cfg: AppConfig,
       ) => {
-        const maxRecentTracks =
-          cfg.savedRecentWindows.length > 0 ? Math.max(...cfg.savedRecentWindows) : undefined;
+        const recentDefinitions = createSavedRecentDefinitions({
+          windows: cfg.savedRecentWindows,
+          playlistPrefix: cfg.autoPlaylistsPlaylistPrefix,
+          playlistSuffix: cfg.autoPlaylistsPlaylistSuffix,
+          coverColor: cfg.savedRecentCoverColor,
+        });
+
+        if (recentDefinitions.length === 0) {
+          return null;
+        }
+
+        const maxRecentTracks = Math.max(...cfg.savedRecentWindows);
+
+        return new AutoPlaylistsSyncService(
+          spotifyClient,
+          new SavedTracksSource(spotifyClient),
+          archiveRepository,
+          appStateRepository,
+          log,
+          {
+            definitions: recentDefinitions,
+            syncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
+            playlistPrivate: true,
+            syncModeName: "fast",
+            syncRemovedTracksArchive: false,
+            savedTracksRequirements: {
+              maxRecentTracks,
+            },
+          },
+        );
+      },
+    },
+    {
+      provide: AUTO_PLAYLISTS_FULL_SYNC_SERVICE,
+      inject: [SPOTIFY_CLIENT, ARCHIVE_REPOSITORY, APP_STATE_REPOSITORY, APP_LOGGER, APP_CONFIG],
+      useFactory: (
+        spotifyClient: SpotifyClient,
+        archiveRepository: ArchiveRepository,
+        appStateRepository: AppStateRepository,
+        log: Logger,
+        cfg: AppConfig,
+      ) => {
         const minSavedYear =
           cfg.savedInYearYears.length > 0 ? Math.min(...cfg.savedInYearYears) : undefined;
         const definitions = [
@@ -110,12 +151,15 @@ import { TrackWatcher } from "./track-watcher.js";
               log,
               {
                 definitions,
-                syncIntervalMs: cfg.autoPlaylistsSyncIntervalMs,
+                syncIntervalMs: cfg.autoPlaylistsFullSyncIntervalMs,
                 playlistPrivate: true,
-                savedTracksRequirements: {
-                  ...(maxRecentTracks !== undefined ? { maxRecentTracks } : {}),
-                  ...(minSavedYear !== undefined ? { minSavedYear } : {}),
-                },
+                syncModeName: "full",
+                syncRemovedTracksArchive: true,
+                ...(minSavedYear !== undefined
+                  ? {
+                      savedTracksRequirements: { minSavedYear },
+                    }
+                  : {}),
               },
             )
           : null;

@@ -14,6 +14,8 @@ export interface AutoPlaylistsSyncOptions {
   definitions: AutoPlaylistDefinition[];
   syncIntervalMs: number;
   playlistPrivate: boolean;
+  syncModeName: string;
+  syncRemovedTracksArchive?: boolean;
   savedTracksRequirements?: SavedTracksFetchRequirements;
 }
 
@@ -56,7 +58,7 @@ export class AutoPlaylistsSyncService {
       void this.syncNow();
     }, this.options.syncIntervalMs);
     this.logger.info(
-      `Sync started (definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms).`,
+      `Sync started (${this.options.syncModeName}, definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms).`,
     );
   }
 
@@ -66,7 +68,7 @@ export class AutoPlaylistsSyncService {
       clearInterval(this.timer);
       this.timer = null;
     }
-    this.logger.info("Sync stopped.");
+    this.logger.info(`Sync stopped (${this.options.syncModeName}).`);
   }
 
   public async syncNow(): Promise<void> {
@@ -79,11 +81,14 @@ export class AutoPlaylistsSyncService {
 
     this.running = true;
     try {
-      this.logger.info("Sync cycle started.");
+      this.logger.info(`Sync cycle started (${this.options.syncModeName}).`);
       await this.ensurePlaylists();
-      const allSavedTracks = await this.savedTracksSource.getAllSavedTracks();
-      await this.syncRemovedTracksArchive(allSavedTracks);
-      const savedTracks = filterSavedTracks(allSavedTracks, this.options.savedTracksRequirements);
+      const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
+
+      if (this.options.syncRemovedTracksArchive) {
+        await this.syncRemovedTracksArchive(savedTracks);
+      }
+
       let syncedPlaylists = 0;
 
       for (const definition of this.options.definitions) {
@@ -104,7 +109,9 @@ export class AutoPlaylistsSyncService {
         this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
       }
 
-      this.logger.info(`Sync cycle completed (updated=${syncedPlaylists}/${this.options.definitions.length}).`);
+      this.logger.info(
+        `Sync cycle completed (${this.options.syncModeName}, updated=${syncedPlaylists}/${this.options.definitions.length}).`,
+      );
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
         this.nextAllowedSyncAtEpochMs = Date.now() + error.retryAfterSeconds * 1000;
@@ -112,7 +119,7 @@ export class AutoPlaylistsSyncService {
           `Sync rate-limited. Retry after ${error.retryAfterSeconds}s. Next attempt after ${new Date(this.nextAllowedSyncAtEpochMs).toISOString()}.`,
         );
       } else {
-        this.logger.warn(`Sync failed: ${(error as Error).message}`);
+        this.logger.warn(`Sync failed (${this.options.syncModeName}): ${(error as Error).message}`);
       }
     } finally {
       this.running = false;

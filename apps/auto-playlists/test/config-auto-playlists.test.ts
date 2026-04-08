@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseHexColor,
+  loadConfig,
   parsePlaylistSuffix,
   parseSavedInYearYears,
   parseSavedRecentWindows,
@@ -55,5 +56,15 @@ describe("auto-playlists config parsers", () => {
 
   it("preserves explicit suffix", () => {
     expect(parsePlaylistSuffix("[SYNC]")).toBe("[SYNC]");
+  });
+
+  it("uses dedicated full sync interval when it is configured", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+    process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
+    process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper_test";
+    process.env.AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS = "7200000";
+
+    expect(loadConfig().autoPlaylistsFullSyncIntervalMs).toBe(7200000);
   });
 });

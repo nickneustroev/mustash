@@ -102,6 +102,33 @@ describe("SavedTracksSource", () => {
     expect(tracks.map((track) => track.trackId)).toEqual(["x", "a", "b", "c", "d"]);
     expect(getSavedTracksPage).toHaveBeenCalledTimes(7);
   });
+
+  it("loads only the required recent pages for partial sync", async () => {
+    const getSavedTracksPage = vi
+      .fn()
+      .mockResolvedValueOnce({
+        tracks: [
+          buildSavedTrack("a", "2024-05-01T10:00:00.000Z"),
+          buildSavedTrack("b", "2024-04-01T10:00:00.000Z"),
+        ],
+        total: 5,
+      })
+      .mockResolvedValueOnce({
+        tracks: [
+          buildSavedTrack("c", "2024-03-01T10:00:00.000Z"),
+          buildSavedTrack("d", "2024-02-01T10:00:00.000Z"),
+        ],
+        total: 5,
+      });
+
+    const source = new SavedTracksSource({ getSavedTracksPage } as unknown as SpotifyClient, 2);
+    const tracks = await source.getSavedTracks({ maxRecentTracks: 4 });
+
+    expect(tracks.map((track) => track.trackId)).toEqual(["a", "b", "c", "d"]);
+    expect(getSavedTracksPage).toHaveBeenCalledTimes(2);
+    expect(getSavedTracksPage).toHaveBeenNthCalledWith(1, 2, 0);
+    expect(getSavedTracksPage).toHaveBeenNthCalledWith(2, 2, 2);
+  });
 });
 
 describe("filterSavedTracks", () => {

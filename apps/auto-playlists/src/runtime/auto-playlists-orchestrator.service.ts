@@ -2,7 +2,8 @@ import type { PrismaClient } from "@prisma/client";
 import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from "@nestjs/common";
 import { type AppConfig, getSafeConfigForLogs } from "../core/config.js";
 import {
-  AUTO_PLAYLISTS_SYNC_SERVICE,
+  AUTO_PLAYLISTS_FAST_SYNC_SERVICE,
+  AUTO_PLAYLISTS_FULL_SYNC_SERVICE,
   APP_CONFIG,
   APP_LOGGER,
   AUTH_MANAGER,
@@ -24,8 +25,10 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     @Inject(AUTH_MANAGER) private readonly authManager: AuthManager,
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     @Inject(TRACK_WATCHER) private readonly watcher: TrackWatcher,
-    @Inject(AUTO_PLAYLISTS_SYNC_SERVICE)
-    private readonly autoPlaylistsSyncService: AutoPlaylistsSyncService | null,
+    @Inject(AUTO_PLAYLISTS_FAST_SYNC_SERVICE)
+    private readonly autoPlaylistsFastSyncService: AutoPlaylistsSyncService | null,
+    @Inject(AUTO_PLAYLISTS_FULL_SYNC_SERVICE)
+    private readonly autoPlaylistsFullSyncService: AutoPlaylistsSyncService | null,
   ) {}
 
   public async onModuleInit(): Promise<void> {
@@ -34,7 +37,8 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     this.log.info("Spotify auth is ready.");
 
     this.watcher.start();
-    this.autoPlaylistsSyncService?.start();
+    this.autoPlaylistsFastSyncService?.start();
+    this.autoPlaylistsFullSyncService?.start();
   }
 
   public async onApplicationShutdown(signal?: string): Promise<void> {
@@ -45,7 +49,8 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
 
     this.log.info(`Stopping (${signal ?? "app.close"}).`);
     this.watcher.stop();
-    this.autoPlaylistsSyncService?.stop();
+    this.autoPlaylistsFastSyncService?.stop();
+    this.autoPlaylistsFullSyncService?.stop();
     await this.prisma.$disconnect();
   }
 }
