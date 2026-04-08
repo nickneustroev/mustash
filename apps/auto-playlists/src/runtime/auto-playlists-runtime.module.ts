@@ -6,8 +6,9 @@ import {
   APP_LOGGER,
   APP_STATE_REPOSITORY,
   ARCHIVE_REPOSITORY,
-  AUTO_PLAYLISTS_FAST_SYNC_SERVICE,
-  AUTO_PLAYLISTS_FULL_SYNC_SERVICE,
+  AUTO_PLAYLISTS_FREQUENT_SYNC_SERVICE,
+  AUTO_PLAYLISTS_RARE_SYNC_SERVICE,
+  AUTO_PLAYLISTS_SYNC_RUNNER,
   CONSOLE_NOTIFIER,
   HISTORY_REPOSITORY,
   SPOTIFY_CLIENT,
@@ -27,9 +28,35 @@ import { AutoPlaylistsOrchestratorService } from "./auto-playlists-orchestrator.
 import { ConsoleNotifier } from "./console-notifier.js";
 import { TrackWatcher } from "./track-watcher.js";
 
+const RARE_SYNC_INITIAL_DELAY_MS = 60_000;
+
+type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
+
 @Module({
   imports: [CoreModule, SpotifyModule, PersistenceModule],
   providers: [
+    {
+      provide: AUTO_PLAYLISTS_SYNC_RUNNER,
+      useFactory: (): SyncRunner => {
+        let syncQueue = Promise.resolve();
+
+        return async <T>(_modeName: string, run: () => Promise<T>): Promise<T> => {
+          const previous = syncQueue;
+          let release!: () => void;
+          syncQueue = new Promise<void>((resolve) => {
+            release = resolve;
+          });
+
+          await previous.catch(() => undefined);
+
+          try {
+            return await run();
+          } finally {
+            release();
+          }
+        };
+      },
+    },
     {
       provide: CONSOLE_NOTIFIER,
       inject: [APP_LOGGER],
@@ -74,14 +101,22 @@ import { TrackWatcher } from "./track-watcher.js";
         }),
     },
     {
-      provide: AUTO_PLAYLISTS_FAST_SYNC_SERVICE,
-      inject: [SPOTIFY_CLIENT, ARCHIVE_REPOSITORY, APP_STATE_REPOSITORY, APP_LOGGER, APP_CONFIG],
+      provide: AUTO_PLAYLISTS_FREQUENT_SYNC_SERVICE,
+      inject: [
+        SPOTIFY_CLIENT,
+        ARCHIVE_REPOSITORY,
+        APP_STATE_REPOSITORY,
+        APP_LOGGER,
+        APP_CONFIG,
+        AUTO_PLAYLISTS_SYNC_RUNNER,
+      ],
       useFactory: (
         spotifyClient: SpotifyClient,
         archiveRepository: ArchiveRepository,
         appStateRepository: AppStateRepository,
         log: Logger,
         cfg: AppConfig,
+        runExclusive: SyncRunner,
       ) => {
         const recentDefinitions = createSavedRecentDefinitions({
           windows: cfg.savedRecentWindows,
@@ -107,6 +142,7 @@ import { TrackWatcher } from "./track-watcher.js";
             syncIntervalMs: cfg.autoPlaylistsFrequentSyncIntervalMs,
             playlistPrivate: true,
             syncModeName: "frequent",
+            runExclusive,
             syncRemovedTracksArchive: false,
             savedTracksRequirements: {
               maxRecentTracks,
@@ -116,31 +152,31 @@ import { TrackWatcher } from "./track-watcher.js";
       },
     },
     {
-      provide: AUTO_PLAYLISTS_FULL_SYNC_SERVICE,
-      inject: [SPOTIFY_CLIENT, ARCHIVE_REPOSITORY, APP_STATE_REPOSITORY, APP_LOGGER, APP_CONFIG],
+      provide: AUTO_PLAYLISTS_RARE_SYNC_SERVICE,
+      inject: [
+        SPOTIFY_CLIENT,
+        ARCHIVE_REPOSITORY,
+        APP_STATE_REPOSITORY,
+        APP_LOGGER,
+        APP_CONFIG,
+        AUTO_PLAYLISTS_SYNC_RUNNER,
+      ],
       useFactory: (
         spotifyClient: SpotifyClient,
         archiveRepository: ArchiveRepository,
         appStateRepository: AppStateRepository,
         log: Logger,
         cfg: AppConfig,
+        runExclusive: SyncRunner,
       ) => {
         const minSavedYear =
           cfg.savedInYearYears.length > 0 ? Math.min(...cfg.savedInYearYears) : undefined;
-        const definitions = [
-          ...createSavedRecentDefinitions({
-            windows: cfg.savedRecentWindows,
-            playlistPrefix: cfg.autoPlaylistsPlaylistPrefix,
-            playlistSuffix: cfg.autoPlaylistsPlaylistSuffix,
-            coverColor: cfg.savedRecentCoverColor,
-          }),
-          ...createSavedInYearDefinitions({
-            years: cfg.savedInYearYears,
-            playlistPrefix: cfg.autoPlaylistsPlaylistPrefix,
-            playlistSuffix: cfg.autoPlaylistsPlaylistSuffix,
-            coverColor: cfg.savedInYearCoverColor,
-          }),
-        ];
+        const definitions = createSavedInYearDefinitions({
+          years: cfg.savedInYearYears,
+          playlistPrefix: cfg.autoPlaylistsPlaylistPrefix,
+          playlistSuffix: cfg.autoPlaylistsPlaylistSuffix,
+          coverColor: cfg.savedInYearCoverColor,
+        });
 
         return definitions.length > 0
           ? new AutoPlaylistsSyncService(
@@ -151,9 +187,11 @@ import { TrackWatcher } from "./track-watcher.js";
               log,
               {
                 definitions,
-                syncIntervalMs: cfg.autoPlaylistsFullSyncIntervalMs,
+                syncIntervalMs: cfg.autoPlaylistsRareSyncIntervalMs,
+                initialDelayMs: RARE_SYNC_INITIAL_DELAY_MS,
                 playlistPrivate: true,
-                syncModeName: "full",
+                syncModeName: "rare",
+                runExclusive,
                 syncRemovedTracksArchive: true,
                 ...(minSavedYear !== undefined
                   ? {

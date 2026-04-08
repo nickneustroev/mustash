@@ -32,7 +32,7 @@ const schema = z.object({
   AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
   AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(600000),
-  AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(10800000),
+  AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(10800000),
   SAVED_RECENT_COVER_COLOR: hexColorSchema,
   SAVED_IN_YEAR_COVER_COLOR: hexColorSchema,
   SAVED_RECENT_WINDOWS: savedRecentWindowsSchema,
@@ -57,7 +57,7 @@ export interface AppConfig {
   autoPlaylistsPlaylistPrefix: string;
   autoPlaylistsPlaylistSuffix: string;
   autoPlaylistsFrequentSyncIntervalMs: number;
-  autoPlaylistsFullSyncIntervalMs: number;
+  autoPlaylistsRareSyncIntervalMs: number;
   savedRecentCoverColor: string;
   savedInYearCoverColor: string;
   savedRecentWindows: number[];
@@ -91,7 +91,7 @@ export function loadConfig(): AppConfig {
     autoPlaylistsPlaylistPrefix: env.AUTO_PLAYLISTS_PLAYLIST_PREFIX,
     autoPlaylistsPlaylistSuffix: env.AUTO_PLAYLISTS_PLAYLIST_SUFFIX,
     autoPlaylistsFrequentSyncIntervalMs: env.AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS,
-    autoPlaylistsFullSyncIntervalMs: env.AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS,
+    autoPlaylistsRareSyncIntervalMs: env.AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS,
     savedRecentCoverColor: env.SAVED_RECENT_COVER_COLOR,
     savedInYearCoverColor: env.SAVED_IN_YEAR_COVER_COLOR,
     savedRecentWindows: env.SAVED_RECENT_WINDOWS,
@@ -117,7 +117,7 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     autoPlaylistsPlaylistPrefix: cfg.autoPlaylistsPlaylistPrefix,
     autoPlaylistsPlaylistSuffix: cfg.autoPlaylistsPlaylistSuffix,
     autoPlaylistsFrequentSyncIntervalMs: cfg.autoPlaylistsFrequentSyncIntervalMs,
-    autoPlaylistsFullSyncIntervalMs: cfg.autoPlaylistsFullSyncIntervalMs,
+    autoPlaylistsRareSyncIntervalMs: cfg.autoPlaylistsRareSyncIntervalMs,
     savedRecentCoverColor: cfg.savedRecentCoverColor,
     savedInYearCoverColor: cfg.savedInYearCoverColor,
     savedRecentWindows: cfg.savedRecentWindows.join(","),

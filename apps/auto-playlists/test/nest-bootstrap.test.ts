@@ -15,6 +15,7 @@ describe("Nest bootstrap lifecycle", () => {
     process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper_test";
     process.env.POLL_INTERVAL_MS = "2500";
     process.env.SAVED_RECENT_WINDOWS = "20,50,100";
+    process.env.SAVED_IN_YEAR_YEARS = "2025";
 
     vi.spyOn(AuthManager.prototype, "initialize").mockResolvedValue();
     vi.spyOn(TrackWatcher.prototype, "start").mockImplementation(() => {});

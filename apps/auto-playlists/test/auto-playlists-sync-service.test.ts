@@ -176,7 +176,7 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "full",
+        syncModeName: "rare",
         syncRemovedTracksArchive: true,
       },
     );
@@ -226,7 +226,7 @@ describe("AutoPlaylistsSyncService", () => {
         ],
         syncIntervalMs: 15000,
         playlistPrivate: true,
-        syncModeName: "full",
+        syncModeName: "rare",
         syncRemovedTracksArchive: true,
       },
     );
@@ -234,9 +234,9 @@ describe("AutoPlaylistsSyncService", () => {
     (service as unknown as { stopped: boolean }).stopped = false;
     await service.syncNow();
 
-    expect(log.info).toHaveBeenCalledWith("Sync cycle started (full).");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle started (rare).");
     expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
-    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (full, updated=1/1).");
+    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (rare, updated=1/1).");
   });
 
   it("reuses cached playlist ids from app state without searching by name", async () => {

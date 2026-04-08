@@ -62,7 +62,7 @@ AUTO_PLAYLISTS_PLAYLIST_SUFFIX=[AUTO]
 # Default: 10 minutes (600000 ms)
 AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS=600000
 # Default: 3 hours (10800000 ms)
-AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS=10800000
+AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS=10800000
 
 SAVED_RECENT_COVER_COLOR=000000
 SAVED_IN_YEAR_COVER_COLOR=060E73
@@ -175,4 +175,4 @@ docker-compose logs -f auto-playlists
 2. Нет поддержки нескольких пользователей.
 3. История и архив зависят от доступности внешнего Postgres.
 4. Нет UI, только консольный вывод и Prisma Studio для админ-доступа к данным.
-5. Для saved-плейлистов быстрый цикл обновляет только `RECENT {N}` плейлисты по последним `max(SAVED_RECENT_WINDOWS)` трекам, а полный цикл отдельно перечитывает весь каталог и обновляет все плейлисты.
+5. Для saved-плейлистов `frequent` цикл обновляет только `RECENT {N}` плейлисты по последним `max(SAVED_RECENT_WINDOWS)` трекам, а `rare` цикл отдельно перечитывает весь каталог, обновляет годовые плейлисты и архив удалённых треков.

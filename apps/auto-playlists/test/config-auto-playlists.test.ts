@@ -63,9 +63,9 @@ describe("auto-playlists config parsers", () => {
     process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
     process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
     process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper_test";
-    process.env.AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS = "7200000";
+    process.env.AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS = "7200000";
 
-    expect(loadConfig().autoPlaylistsFullSyncIntervalMs).toBe(7200000);
+    expect(loadConfig().autoPlaylistsRareSyncIntervalMs).toBe(7200000);
   });
 
   it("prefers frequent sync interval env name", () => {
@@ -84,11 +84,11 @@ describe("auto-playlists config parsers", () => {
     process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
     process.env.DATABASE_URL = "postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper_test";
     delete process.env.AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS;
-    delete process.env.AUTO_PLAYLISTS_FULL_SYNC_INTERVAL_MS;
+    delete process.env.AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS;
 
     const config = loadConfig();
 
     expect(config.autoPlaylistsFrequentSyncIntervalMs).toBe(600000);
-    expect(config.autoPlaylistsFullSyncIntervalMs).toBe(10800000);
+    expect(config.autoPlaylistsRareSyncIntervalMs).toBe(10800000);
   });
 });

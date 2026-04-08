@@ -15,8 +15,10 @@ export interface AutoPlaylistsSyncOptions {
   syncIntervalMs: number;
   playlistPrivate: boolean;
   syncModeName: string;
+  initialDelayMs?: number;
   syncRemovedTracksArchive?: boolean;
   savedTracksRequirements?: SavedTracksFetchRequirements;
+  runExclusive?: <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
 }
 
 interface SavedTrackSnapshotItem {
@@ -32,6 +34,7 @@ const PLAYLIST_ID_KEY_PREFIX = "auto_playlists:playlist_id:";
 
 export class AutoPlaylistsSyncService {
   private timer: NodeJS.Timeout | null = null;
+  private initialTimer: NodeJS.Timeout | null = null;
   private running = false;
   private stopped = true;
   private nextAllowedSyncAtEpochMs = 0;
@@ -54,17 +57,29 @@ export class AutoPlaylistsSyncService {
     }
 
     this.stopped = false;
-    void this.syncNow();
+    const initialDelayMs = Math.max(0, this.options.initialDelayMs ?? 0);
+    if (initialDelayMs === 0) {
+      void this.syncNow();
+    } else {
+      this.initialTimer = setTimeout(() => {
+        this.initialTimer = null;
+        void this.syncNow();
+      }, initialDelayMs);
+    }
     this.timer = setInterval(() => {
       void this.syncNow();
     }, this.options.syncIntervalMs);
     this.logger.info(
-      `Sync started (${this.options.syncModeName}, definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms).`,
+      `Sync started (${this.options.syncModeName}, definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms, initialDelay=${initialDelayMs}ms).`,
     );
   }
 
   public stop(): void {
     this.stopped = true;
+    if (this.initialTimer) {
+      clearTimeout(this.initialTimer);
+      this.initialTimer = null;
+    }
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -82,51 +97,54 @@ export class AutoPlaylistsSyncService {
 
     this.running = true;
     try {
-      this.logger.info(`Sync cycle started (${this.options.syncModeName}).`);
-      await this.ensurePlaylists();
-      const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
+      const runExclusive = this.options.runExclusive ?? defaultRunExclusive;
+      await runExclusive(this.options.syncModeName, async () => {
+        this.logger.info(`Sync cycle started (${this.options.syncModeName}).`);
+        await this.ensurePlaylists();
+        const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
 
-      if (this.options.syncRemovedTracksArchive) {
-        await this.syncRemovedTracksArchive(savedTracks);
-      }
-
-      let syncedPlaylists = 0;
-
-      for (const definition of this.options.definitions) {
-        const playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
-        if (!playlistId) {
-          continue;
+        if (this.options.syncRemovedTracksArchive) {
+          await this.syncRemovedTracksArchive(savedTracks);
         }
 
-        const trackUris = definition.resolveTrackUris(savedTracks);
-        const hash = hashTrackUris(trackUris);
-        if (this.lastHashesByDefinitionKey.get(definition.key) === hash) {
-          continue;
-        }
+        let syncedPlaylists = 0;
 
-        try {
-          await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
-        } catch (error) {
-          if (isMissingPlaylistError(error)) {
-            await this.forgetPlaylistId(definition.key);
-            this.lastHashesByDefinitionKey.delete(definition.key);
-            this.logger.warn(
-              `Playlist "${definition.playlistName}" is no longer available. Cached id dropped, will recreate on next sync.`,
-            );
+        for (const definition of this.options.definitions) {
+          const playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
+          if (!playlistId) {
             continue;
           }
 
-          throw error;
+          const trackUris = definition.resolveTrackUris(savedTracks);
+          const hash = hashTrackUris(trackUris);
+          if (this.lastHashesByDefinitionKey.get(definition.key) === hash) {
+            continue;
+          }
+
+          try {
+            await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
+          } catch (error) {
+            if (isMissingPlaylistError(error)) {
+              await this.forgetPlaylistId(definition.key);
+              this.lastHashesByDefinitionKey.delete(definition.key);
+              this.logger.warn(
+                `Playlist "${definition.playlistName}" is no longer available. Cached id dropped, will recreate on next sync.`,
+              );
+              continue;
+            }
+
+            throw error;
+          }
+
+          this.lastHashesByDefinitionKey.set(definition.key, hash);
+          syncedPlaylists += 1;
+          this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
         }
 
-        this.lastHashesByDefinitionKey.set(definition.key, hash);
-        syncedPlaylists += 1;
-        this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
-      }
-
-      this.logger.info(
-        `Sync cycle completed (${this.options.syncModeName}, updated=${syncedPlaylists}/${this.options.definitions.length}).`,
-      );
+        this.logger.info(
+          `Sync cycle completed (${this.options.syncModeName}, updated=${syncedPlaylists}/${this.options.definitions.length}).`,
+        );
+      });
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
         this.nextAllowedSyncAtEpochMs = Date.now() + error.retryAfterSeconds * 1000;
@@ -274,6 +292,10 @@ export class AutoPlaylistsSyncService {
 
 export function hashTrackUris(trackUris: string[]): string {
   return `${trackUris.length}:${trackUris.join("|")}`;
+}
+
+async function defaultRunExclusive<T>(_modeName: string, run: () => Promise<T>): Promise<T> {
+  return run();
 }
 
 function buildPlaylistIdStateKey(definitionKey: string): string {
