@@ -71,7 +71,7 @@ export class AutoPlaylistsSyncService {
       void this.syncNow();
     }, this.options.syncIntervalMs);
     this.logger.info(
-      `Sync started (${this.options.syncModeName}, definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms, initialDelay=${initialDelayMs}ms).`,
+      `Sync now is active (${this.options.syncModeName}, definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms, initialDelay=${initialDelayMs}ms).`,
     );
   }
 
