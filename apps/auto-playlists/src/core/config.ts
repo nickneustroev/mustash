@@ -28,7 +28,7 @@ const schema = z.object({
     .optional()
     .transform((v) => v === "true")
     .default(true),
-  DATABASE_URL: z.string().min(1),
+  DATABASE_URL: z.string().optional().default(""),
   AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
   AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(600000),

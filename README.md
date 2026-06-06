@@ -4,7 +4,7 @@
 
 Приложение:
 
-1. отслеживает текущее воспроизведение и сохраняет live history в Postgres;
+1. отслеживает текущее воспроизведение и сохраняет live history в Postgres, если настроена БД;
 2. поддерживает авто-плейлисты на основе текущего списка `Saved Tracks`;
 3. архивирует треки, которые были удалены из избранного.
 
@@ -53,6 +53,7 @@ SPOTIFY_LISTEN_PORT=3000
 
 SPOTIFY_PROXY_ENABLED=false
 SPOTIFY_PROXY_URL=
+# Optional. Leave empty to run without DB-backed history and removed-track archive.
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper
 POLL_INTERVAL_MS=2500
 PRINT_ON_START=true
@@ -75,12 +76,14 @@ SAVED_IN_YEAR_YEARS=2024,2025
 
 `auto-playlists` использует из `.env`:
 
-1. Postgres (`DATABASE_URL`) и хранение OAuth-токенов в `AppState`
+1. Postgres (`DATABASE_URL`) для live history, архива удаленных треков и постоянного `AppState`
 2. playback polling (`POLL_INTERVAL_MS`, `PRINT_ON_START`)
 3. runtime авто-плейлистов (`AUTO_PLAYLISTS_*`)
 4. оформление обложек (`SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR`)
 5. правила авто-плейлистов (`SAVED_RECENT_WINDOWS`, `SAVED_IN_YEAR_YEARS`)
 6. Spotify OAuth / proxy настройки
+
+Если `DATABASE_URL` пустой или подключение к БД недоступно, приложение продолжит работу без сохранения прослушанных треков и архива удаленных треков.
 
 `AUTO_PLAYLISTS_PLAYLIST_PREFIX` можно оставить пустым:
 
@@ -146,7 +149,7 @@ docker-compose logs -f auto-playlists
 1. callback-сервер внутри контейнера слушает `3000`
 2. наружу публикуется `3000`
 3. `SPOTIFY_REDIRECT_URI` внутри сервиса переопределяется в `http://127.0.0.1:3000/callback`
-4. OAuth-токены сохраняются в таблице `AppState` в Postgres
+4. при доступной БД runtime-состояние сохраняется в таблице `AppState` в Postgres
 
 Если нужно изменить значения, используй compose-переменные:
 
@@ -161,7 +164,7 @@ docker-compose logs -f auto-playlists
 3. Если задан `SAVED_IN_YEAR_YEARS`, формирует плейлисты `SAVED {YEAR} [AUTO]`.
 4. Для каждого definition поддерживает отдельный плейлист.
 5. При создании `saved recent` плейлиста автоматически выставляется обложка.
-6. При удалении трека из избранного сервис сохраняет его в архив.
+6. При удалении трека из избранного сервис сохраняет его в архив, если БД подключена.
 
 ## Примечания по безопасности
 
@@ -173,6 +176,6 @@ docker-compose logs -f auto-playlists
 
 1. Нет webhook-событий, используется polling.
 2. Нет поддержки нескольких пользователей.
-3. История и архив зависят от доступности внешнего Postgres.
+3. История и архив включаются только при доступном `DATABASE_URL`.
 4. Нет UI, только консольный вывод и Prisma Studio для админ-доступа к данным.
 5. Для saved-плейлистов `frequent` цикл обновляет только `RECENT {N}` плейлисты по последним `max(SAVED_RECENT_WINDOWS)` трекам, а `rare` цикл отдельно перечитывает весь каталог, обновляет годовые плейлисты и архив удалённых треков.

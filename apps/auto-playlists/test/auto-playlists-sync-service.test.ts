@@ -191,6 +191,62 @@ describe("AutoPlaylistsSyncService", () => {
     expect(log.info).toHaveBeenCalledWith("Archived removed track: Artist - bb (bb).");
   });
 
+  it("skips removed tracks archive when DB persistence is disabled", async () => {
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems: vi.fn().mockResolvedValue(undefined),
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const localAppState: AppStateRepository = {
+      ...appStateRepository,
+      getValue: vi.fn().mockResolvedValue(null),
+      setValue: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const localArchive: ArchiveRepository = {
+      ...archiveRepository,
+      getArchivedTrack: vi.fn().mockResolvedValue(null),
+      upsertArchivedTrack: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      localArchive,
+      localAppState,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.slice(0, 2).map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "rare",
+        syncRemovedTracksArchive: true,
+        isDatabasePersistenceEnabled: () => false,
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(localArchive.upsertArchivedTrack).not.toHaveBeenCalled();
+    expect(localAppState.setValue).toHaveBeenCalledTimes(1);
+    expect(localAppState.setValue).toHaveBeenCalledWith("auto_playlists:playlist_id:saved-recent:2", "p2");
+  });
+
   it("hashes uri arrays deterministically", () => {
     expect(hashTrackUris(["a", "b"])).toBe(hashTrackUris(["a", "b"]));
     expect(hashTrackUris(["a", "b"])).not.toBe(hashTrackUris(["b", "a"]));

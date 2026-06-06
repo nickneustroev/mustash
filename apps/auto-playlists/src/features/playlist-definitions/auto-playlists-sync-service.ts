@@ -17,6 +17,7 @@ export interface AutoPlaylistsSyncOptions {
   syncModeName: string;
   initialDelayMs?: number;
   syncRemovedTracksArchive?: boolean;
+  isDatabasePersistenceEnabled?: () => boolean;
   savedTracksRequirements?: SavedTracksFetchRequirements;
   runExclusive?: <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
 }
@@ -103,7 +104,10 @@ export class AutoPlaylistsSyncService {
         await this.ensurePlaylists();
         const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
 
-        if (this.options.syncRemovedTracksArchive) {
+        if (
+          this.options.syncRemovedTracksArchive &&
+          (this.options.isDatabasePersistenceEnabled?.() ?? true)
+        ) {
           await this.syncRemovedTracksArchive(savedTracks);
         }
 

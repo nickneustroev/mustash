@@ -22,6 +22,7 @@ describe("Nest bootstrap lifecycle", () => {
     vi.spyOn(TrackWatcher.prototype, "stop").mockImplementation(() => {});
     vi.spyOn(AutoPlaylistsSyncService.prototype, "start").mockImplementation(() => {});
     vi.spyOn(AutoPlaylistsSyncService.prototype, "stop").mockImplementation(() => {});
+    vi.spyOn(PrismaClient.prototype, "$queryRawUnsafe").mockResolvedValue([{ "?column?": 1 }]);
     vi.spyOn(PrismaClient.prototype, "$disconnect").mockResolvedValue();
   });
 
@@ -33,6 +34,7 @@ describe("Nest bootstrap lifecycle", () => {
     const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
 
     expect(AuthManager.prototype.initialize).toHaveBeenCalledTimes(1);
+    expect(PrismaClient.prototype.$queryRawUnsafe).toHaveBeenCalledWith("SELECT 1");
     expect(TrackWatcher.prototype.start).toHaveBeenCalledTimes(1);
     expect(AutoPlaylistsSyncService.prototype.start).toHaveBeenCalledTimes(2);
 

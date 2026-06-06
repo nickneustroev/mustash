@@ -7,10 +7,12 @@ import {
   APP_CONFIG,
   APP_LOGGER,
   AUTH_MANAGER,
+  DATABASE_FEATURES,
   PRISMA_CLIENT,
   TRACK_WATCHER,
 } from "../core/nest.tokens.js";
 import type { AutoPlaylistsSyncService } from "../features/playlist-definitions/auto-playlists-sync-service.js";
+import type { DatabaseFeatures } from "../persistence/database-features.js";
 import type { Logger } from "../shared/types.js";
 import type { AuthManager } from "../spotify/auth-manager.js";
 import type { TrackWatcher } from "./track-watcher.js";
@@ -23,7 +25,8 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     @Inject(APP_CONFIG) private readonly cfg: AppConfig,
     @Inject(APP_LOGGER) private readonly log: Logger,
     @Inject(AUTH_MANAGER) private readonly authManager: AuthManager,
-    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
+    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient | null,
+    @Inject(DATABASE_FEATURES) private readonly databaseFeatures: DatabaseFeatures,
     @Inject(TRACK_WATCHER) private readonly watcher: TrackWatcher,
     @Inject(AUTO_PLAYLISTS_FREQUENT_SYNC_SERVICE)
     private readonly autoPlaylistsFrequentSyncService: AutoPlaylistsSyncService | null,
@@ -35,6 +38,7 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     this.log.info(`Config loaded: ${JSON.stringify(getSafeConfigForLogs(this.cfg))}`);
     await this.authManager.initialize();
     this.log.info("Spotify auth is ready.");
+    await this.databaseFeatures.initialize();
 
     this.watcher.start();
     this.autoPlaylistsFrequentSyncService?.start();
@@ -51,6 +55,6 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     this.watcher.stop();
     this.autoPlaylistsFrequentSyncService?.stop();
     this.autoPlaylistsRareSyncService?.stop();
-    await this.prisma.$disconnect();
+    await this.prisma?.$disconnect();
   }
 }

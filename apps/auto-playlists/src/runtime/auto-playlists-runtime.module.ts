@@ -10,6 +10,7 @@ import {
   AUTO_PLAYLISTS_RARE_SYNC_SERVICE,
   AUTO_PLAYLISTS_SYNC_RUNNER,
   CONSOLE_NOTIFIER,
+  DATABASE_FEATURES,
   HISTORY_REPOSITORY,
   SPOTIFY_CLIENT,
   TRACK_WATCHER,
@@ -20,6 +21,7 @@ import { createSavedInYearDefinitions } from "../features/saved-in-year/saved-in
 import { createSavedRecentDefinitions } from "../features/saved-recent/saved-recent-definition.js";
 import { PersistenceModule } from "../persistence/persistence.module.js";
 import { estimateLivePlayedAt } from "../persistence/history-repository.js";
+import type { DatabaseFeatures } from "../persistence/database-features.js";
 import type { AppStateRepository, ArchiveRepository, HistoryRepository } from "../persistence/types.js";
 import type { Logger } from "../shared/types.js";
 import type { SpotifyClient } from "../spotify/spotify-client.js";
@@ -64,19 +66,23 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
     },
     {
       provide: TRACK_WATCHER,
-      inject: [SPOTIFY_CLIENT, CONSOLE_NOTIFIER, APP_LOGGER, APP_CONFIG, HISTORY_REPOSITORY],
+      inject: [SPOTIFY_CLIENT, CONSOLE_NOTIFIER, APP_LOGGER, APP_CONFIG, HISTORY_REPOSITORY, DATABASE_FEATURES],
       useFactory: (
         spotifyClient: SpotifyClient,
         notifier: ConsoleNotifier,
         log: Logger,
         cfg: AppConfig,
         historyRepository: HistoryRepository,
+        databaseFeatures: DatabaseFeatures,
       ) =>
         new TrackWatcher(spotifyClient, notifier, log, {
           pollIntervalMs: cfg.pollIntervalMs,
           printOnStart: cfg.printOnStart,
           onNewTrack: async (snapshot) => {
             if (!snapshot.trackUri) {
+              return;
+            }
+            if (!databaseFeatures.isPersistenceEnabled()) {
               return;
             }
 
@@ -109,6 +115,7 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
         APP_LOGGER,
         APP_CONFIG,
         AUTO_PLAYLISTS_SYNC_RUNNER,
+        DATABASE_FEATURES,
       ],
       useFactory: (
         spotifyClient: SpotifyClient,
@@ -117,6 +124,7 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
         log: Logger,
         cfg: AppConfig,
         runExclusive: SyncRunner,
+        databaseFeatures: DatabaseFeatures,
       ) => {
         const recentDefinitions = createSavedRecentDefinitions({
           windows: cfg.savedRecentWindows,
@@ -144,6 +152,7 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
             syncModeName: "frequent",
             runExclusive,
             syncRemovedTracksArchive: false,
+            isDatabasePersistenceEnabled: () => databaseFeatures.isPersistenceEnabled(),
             savedTracksRequirements: {
               maxRecentTracks,
             },
@@ -160,6 +169,7 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
         APP_LOGGER,
         APP_CONFIG,
         AUTO_PLAYLISTS_SYNC_RUNNER,
+        DATABASE_FEATURES,
       ],
       useFactory: (
         spotifyClient: SpotifyClient,
@@ -168,6 +178,7 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
         log: Logger,
         cfg: AppConfig,
         runExclusive: SyncRunner,
+        databaseFeatures: DatabaseFeatures,
       ) => {
         const minSavedYear =
           cfg.savedInYearYears.length > 0 ? Math.min(...cfg.savedInYearYears) : undefined;
@@ -193,6 +204,7 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
                 syncModeName: "rare",
                 runExclusive,
                 syncRemovedTracksArchive: true,
+                isDatabasePersistenceEnabled: () => databaseFeatures.isPersistenceEnabled(),
                 ...(minSavedYear !== undefined
                   ? {
                       savedTracksRequirements: { minSavedYear },

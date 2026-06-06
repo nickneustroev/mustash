@@ -4,6 +4,7 @@ export const FETCH_IMPL = Symbol("FETCH_IMPL");
 export const AUTH_MANAGER = Symbol("AUTH_MANAGER");
 export const SPOTIFY_CLIENT = Symbol("SPOTIFY_CLIENT");
 export const PRISMA_CLIENT = Symbol("PRISMA_CLIENT");
+export const DATABASE_FEATURES = Symbol("DATABASE_FEATURES");
 export const ARCHIVE_REPOSITORY = Symbol("ARCHIVE_REPOSITORY");
 export const APP_STATE_REPOSITORY = Symbol("APP_STATE_REPOSITORY");
 export const HISTORY_REPOSITORY = Symbol("HISTORY_REPOSITORY");

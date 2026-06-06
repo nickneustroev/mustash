@@ -68,6 +68,15 @@ describe("auto-playlists config parsers", () => {
     expect(loadConfig().autoPlaylistsRareSyncIntervalMs).toBe(7200000);
   });
 
+  it("allows empty database url", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+    process.env.SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
+    process.env.DATABASE_URL = "";
+
+    expect(loadConfig().databaseUrl).toBe("");
+  });
+
   it("prefers frequent sync interval env name", () => {
     process.env.SPOTIFY_CLIENT_ID = "test-client-id";
     process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";

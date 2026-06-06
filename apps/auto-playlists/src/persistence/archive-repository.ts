@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Logger } from "../shared/types.js";
-import type { ArchivedTrackItem } from "./types.js";
+import type { ArchivedTrackItem, ArchiveRepository } from "./types.js";
 
-export class PrismaArchiveRepository {
+export class PrismaArchiveRepository implements ArchiveRepository {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly logger: Logger,
