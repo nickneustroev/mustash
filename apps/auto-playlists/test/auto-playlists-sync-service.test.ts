@@ -9,6 +9,7 @@ import type { AppStateRepository, ArchiveRepository } from "../src/persistence/t
 import type { Logger, SavedTrackItem } from "../src/shared/types.js";
 import type { SpotifyClient } from "../src/spotify/spotify-client.js";
 import { SpotifyRateLimitError } from "../src/shared/errors.js";
+import { initLocale } from "../src/i18n/index.js";
 
 const log: Logger = {
   info: vi.fn(),
@@ -44,6 +45,7 @@ function buildSavedTrack(trackId: string): SavedTrackItem {
 
 describe("AutoPlaylistsSyncService", () => {
   beforeEach(() => {
+    initLocale("EN");
     vi.clearAllMocks();
   });
 

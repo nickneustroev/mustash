@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import http from "node:http";
 import { URL } from "node:url";
 import type { Logger, OAuthTokenStore, OAuthTokens, SpotifyAuthConfig } from "../shared/types.js";
+import { t } from "../i18n/index.js";
 
 interface SpotifyTokenResponse {
   access_token: string;
@@ -33,14 +34,14 @@ export class AuthManager {
     this.tokens = await this.tokenStore.loadTokens();
 
     if (!this.tokens) {
-      this.log.info("No stored Spotify tokens found, starting login.");
+      this.log.info(t("noStoredSpotifyTokens"));
       this.tokens = await this.authorizeInteractive();
       await this.persistTokens(this.tokens);
       return;
     }
 
     if (Date.now() + 15000 >= this.tokens.expiresAtEpochMs) {
-      this.log.info("Access token is near expiration, refreshing.");
+      this.log.info(t("accessTokenNearExpiration"));
       this.tokens = await this.refreshAccessToken(this.tokens.refreshToken);
       await this.persistTokens(this.tokens);
     }
@@ -88,15 +89,15 @@ export class AuthManager {
 
     const redirectHost = new URL(this.cfg.spotifyRedirectUri).hostname;
     if (isLoopbackHost(redirectHost)) {
-      this.log.info("Opening Spotify authorization in browser.");
+      this.log.info(t("openingSpotifyAuthorization"));
       openBrowser(authorizeUrl.toString());
     } else {
       this.log.info(
-        `Open ${new URL("/", this.cfg.spotifyRedirectUri).toString()} to start Spotify authorization.`,
+        t("openSpotifyAuthorization", new URL("/", this.cfg.spotifyRedirectUri).toString()),
       );
     }
     const { code, returnedState } = await callbackPromise;
-    this.log.info("Authorization callback received. Exchanging code for tokens.");
+    this.log.info(t("authorizationCallbackReceived"));
 
     if (returnedState !== state) {
       throw new Error("OAuth state mismatch. Aborting for safety.");
@@ -159,9 +160,9 @@ export class AuthManager {
       server.on("error", (err) => reject(err));
       server.listen(port, listenHost, () => {
         this.log.info(
-          `Waiting for OAuth callback on ${listenHost}:${port} (${callbackPath}), redirect URI host: ${host}`,
+          t("waitingForOAuthCallback", listenHost, port, callbackPath, host),
         );
-        this.log.info(`Authorization entrypoint: ${new URL("/", this.cfg.spotifyRedirectUri)}`);
+        this.log.info(t("authorizationEntrypoint", new URL("/", this.cfg.spotifyRedirectUri).toString()));
       });
 
       setTimeout(() => {
@@ -202,7 +203,7 @@ export class AuthManager {
       throw new Error("Token exchange response missing required token fields.");
     }
 
-    this.log.info("Spotify token exchange completed successfully.");
+    this.log.info(t("spotifyTokenExchangeSuccess"));
 
     return {
       accessToken: data.access_token,

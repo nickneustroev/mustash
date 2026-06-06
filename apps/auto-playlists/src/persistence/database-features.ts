@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { AppConfig } from "../core/config.js";
 import type { Logger } from "../shared/types.js";
+import { t } from "../i18n/index.js";
 
 export class DatabaseFeatures {
   private persistenceEnabled = false;
@@ -20,31 +21,23 @@ export class DatabaseFeatures {
 
     if (this.cfg.databaseUrl.trim().length === 0) {
       this.persistenceEnabled = false;
-      this.logger.warn(
-        "База данных не указана: DATABASE_URL пустой. Приложение будет работать без функций, которые используют БД: сохранение прослушанных треков и сохранение удаленных треков отключены.",
-      );
+      this.logger.warn(t("databaseUrlEmpty"));
       return;
     }
 
     if (!this.prisma) {
       this.persistenceEnabled = false;
-      this.logger.warn(
-        "Обнаружено подключение к БД, но клиент БД не создан. Приложение будет работать без функций, которые используют БД.",
-      );
+      this.logger.warn(t("databaseClientNotCreated"));
       return;
     }
 
     try {
       await this.prisma.$queryRawUnsafe("SELECT 1");
       this.persistenceEnabled = true;
-      this.logger.info(
-        "Обнаружено подключение к БД, и оно проверено. Приложение будет использовать функции, которые сохраняют данные в БД.",
-      );
+      this.logger.info(t("databaseConnected"));
     } catch (error) {
       this.persistenceEnabled = false;
-      this.logger.warn(
-        `Обнаружено подключение к БД, но не удается подключиться: ${(error as Error).message}. Приложение будет работать без функций, которые используют БД.`,
-      );
+      this.logger.warn(t("databaseConnectionFailed", (error as Error).message));
     }
   }
 

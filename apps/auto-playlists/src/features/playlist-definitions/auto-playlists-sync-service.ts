@@ -3,6 +3,7 @@ import type { SavedTrackItem } from "../../shared/types.js";
 import { SpotifyRateLimitError } from "../../shared/errors.js";
 import type { Logger } from "../../shared/types.js";
 import type { SpotifyClient } from "../../spotify/spotify-client.js";
+import { t } from "../../i18n/index.js";
 import type { AutoPlaylistDefinition } from "./auto-playlist-definition.js";
 import {
   filterSavedTracks,
@@ -53,7 +54,7 @@ export class AutoPlaylistsSyncService {
 
   public start(): void {
     if (this.options.definitions.length === 0) {
-      this.logger.warn("No playlist definitions are configured.");
+      this.logger.warn(t("noPlaylistDefinitionsConfigured"));
       return;
     }
 
@@ -71,7 +72,13 @@ export class AutoPlaylistsSyncService {
       void this.syncNow();
     }, this.options.syncIntervalMs);
     this.logger.info(
-      `Sync now is active (${this.options.syncModeName}, definitions=${this.options.definitions.length}, interval=${this.options.syncIntervalMs}ms, initialDelay=${initialDelayMs}ms).`,
+      t(
+        "syncActive",
+        this.options.syncModeName,
+        this.options.definitions.length,
+        this.options.syncIntervalMs,
+        initialDelayMs,
+      ),
     );
   }
 
@@ -85,7 +92,7 @@ export class AutoPlaylistsSyncService {
       clearInterval(this.timer);
       this.timer = null;
     }
-    this.logger.info(`Sync stopped (${this.options.syncModeName}).`);
+    this.logger.info(t("syncStopped", this.options.syncModeName));
   }
 
   public async syncNow(): Promise<void> {
@@ -100,7 +107,7 @@ export class AutoPlaylistsSyncService {
     try {
       const runExclusive = this.options.runExclusive ?? defaultRunExclusive;
       await runExclusive(this.options.syncModeName, async () => {
-        this.logger.info(`Sync cycle started (${this.options.syncModeName}).`);
+        this.logger.info(t("syncCycleStarted", this.options.syncModeName));
         await this.ensurePlaylists();
         const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
 
@@ -132,7 +139,7 @@ export class AutoPlaylistsSyncService {
               await this.forgetPlaylistId(definition.key);
               this.lastHashesByDefinitionKey.delete(definition.key);
               this.logger.warn(
-                `Playlist "${definition.playlistName}" is no longer available. Cached id dropped, will recreate on next sync.`,
+                t("playlistNoLongerAvailable", definition.playlistName),
               );
               continue;
             }
@@ -142,21 +149,30 @@ export class AutoPlaylistsSyncService {
 
           this.lastHashesByDefinitionKey.set(definition.key, hash);
           syncedPlaylists += 1;
-          this.logger.info(`Synced "${definition.playlistName}" - ${trackUris.length} items.`);
+          this.logger.info(t("syncedPlaylist", definition.playlistName, trackUris.length));
         }
 
         this.logger.info(
-          `Sync cycle completed (${this.options.syncModeName}, updated=${syncedPlaylists}/${this.options.definitions.length}).`,
+          t(
+            "syncCycleCompleted",
+            this.options.syncModeName,
+            syncedPlaylists,
+            this.options.definitions.length,
+          ),
         );
       });
     } catch (error) {
       if (error instanceof SpotifyRateLimitError) {
         this.nextAllowedSyncAtEpochMs = Date.now() + error.retryAfterSeconds * 1000;
         this.logger.warn(
-          `Sync rate-limited. Retry after ${error.retryAfterSeconds}s. Next attempt after ${new Date(this.nextAllowedSyncAtEpochMs).toISOString()}.`,
+          t(
+            "syncRateLimited",
+            error.retryAfterSeconds,
+            new Date(this.nextAllowedSyncAtEpochMs).toISOString(),
+          ),
         );
       } else {
-        this.logger.warn(`Sync failed (${this.options.syncModeName}): ${(error as Error).message}`);
+        this.logger.warn(t("syncFailed", this.options.syncModeName, (error as Error).message));
       }
     } finally {
       this.running = false;
@@ -190,7 +206,7 @@ export class AutoPlaylistsSyncService {
         this.options.playlistPrivate,
       );
       await this.rememberPlaylistId(definition.key, created.id);
-      this.logger.info(`Created (${definition.playlistName}).`);
+      this.logger.info(t("playlistCreated", definition.playlistName));
 
       if (!definition.buildCoverJpeg) {
         continue;
@@ -199,10 +215,10 @@ export class AutoPlaylistsSyncService {
       try {
         const coverJpeg = await definition.buildCoverJpeg();
         await this.spotifyClient.uploadPlaylistCoverImage(created.id, coverJpeg.toString("base64"));
-        this.logger.info(`Cover uploaded (${definition.playlistName}).`);
+        this.logger.info(t("coverUploaded", definition.playlistName));
       } catch (error) {
         this.logger.warn(
-          `Failed to upload cover for playlist ${definition.playlistName}: ${(error as Error).message}`,
+          t("coverUploadFailed", definition.playlistName, (error as Error).message),
         );
       }
     }
@@ -233,7 +249,12 @@ export class AutoPlaylistsSyncService {
           removedAt: now,
         });
         this.logger.info(
-          `Archived removed track: ${track.artistName ?? "Unknown artist"} - ${track.trackName ?? track.trackId} (${track.trackId}).`,
+          t(
+            "archivedRemovedTrack",
+            track.artistName ?? "Unknown artist",
+            track.trackName ?? track.trackId,
+            track.trackId,
+          ),
         );
       }
     }
@@ -259,7 +280,7 @@ export class AutoPlaylistsSyncService {
         }))
         .filter((item) => !Number.isNaN(item.addedAt.getTime()));
     } catch {
-      this.logger.warn("Saved tracks snapshot in AppState is invalid. Rebuilding snapshot.");
+      this.logger.warn(t("savedTracksSnapshotInvalid"));
       return [];
     }
   }

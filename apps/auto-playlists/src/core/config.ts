@@ -43,6 +43,7 @@ const schema = z.object({
     .transform((v) => v === "true")
     .default(false),
   SPOTIFY_PROXY_URL: z.string().default(""),
+  APP_LOCALE: z.enum(["EN", "RU"]).default("EN"),
 });
 
 export interface AppConfig {
@@ -64,6 +65,7 @@ export interface AppConfig {
   savedInYearYears: number[];
   spotifyProxyEnabled: boolean;
   spotifyProxyUrl: string;
+  appLocale: "EN" | "RU";
 }
 
 export function loadConfig(): AppConfig {
@@ -98,6 +100,7 @@ export function loadConfig(): AppConfig {
     savedInYearYears: env.SAVED_IN_YEAR_YEARS,
     spotifyProxyEnabled: env.SPOTIFY_PROXY_ENABLED,
     spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
+    appLocale: env.APP_LOCALE,
   };
 }
 

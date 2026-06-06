@@ -2,6 +2,7 @@ import { SpotifyRateLimitError } from "../shared/errors.js";
 import { decideTrackEvent, type TrackDecisionState } from "./track-decision.js";
 import type { Logger, PlaybackSnapshot } from "../shared/types.js";
 import type { SpotifyClient } from "../spotify/spotify-client.js";
+import { t } from "../i18n/index.js";
 import type { ConsoleNotifier } from "./console-notifier.js";
 
 interface TrackWatcherOptions {
@@ -28,7 +29,7 @@ export class TrackWatcher {
 
   public start(): void {
     this.stopped = false;
-    this.logger.info(`Track watcher started. Poll interval: ${this.opts.pollIntervalMs}ms`);
+    this.logger.info(t("trackWatcherStarted", this.opts.pollIntervalMs));
     this.scheduleNextTick(0);
   }
 
@@ -38,7 +39,7 @@ export class TrackWatcher {
       clearTimeout(this.timer);
       this.timer = null;
     }
-    this.logger.info("Track watcher stopped.");
+    this.logger.info(t("trackWatcherStopped"));
   }
 
   private scheduleNextTick(delayMs: number): void {
@@ -71,13 +72,9 @@ export class TrackWatcher {
           error.retryAfterSeconds,
           this.randomFn,
         );
-        this.logger.warn(
-          `Spotify rate limited requests. Backing off for ${delayMs}ms before next poll.`,
-        );
+        this.logger.warn(t("spotifyRateLimitedBackingOff", delayMs));
       } else {
-        this.logger.warn(
-          `Polling failed: ${(error as Error).message}. Next attempt in ${delayMs}ms.`,
-        );
+        this.logger.warn(t("pollingFailed", (error as Error).message, delayMs));
       }
     } finally {
       this.scheduleNextTick(delayMs);

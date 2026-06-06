@@ -8,6 +8,7 @@ import type {
 } from "../shared/types.js";
 import { SpotifyRateLimitError } from "./errors.js";
 import type { AuthManager } from "./auth-manager.js";
+import { t } from "../i18n/index.js";
 
 interface SpotifyArtist {
   name?: string;
@@ -310,7 +311,7 @@ export class SpotifyClient {
     const response = await this.fetchWithTransport(url, init, headers, this.transportMode);
 
     if (response.status === 401 && allowRetryOnUnauthorized) {
-      this.log.warn("Spotify API returned 401, refreshing token and retrying once.");
+      this.log.warn(t("spotifyApi401"));
       await this.auth.handleUnauthorized();
       return this.requestWithAuthInternal(url, init, false, rateLimitRetryAttempts);
     }
@@ -324,7 +325,7 @@ export class SpotifyClient {
       }
 
       this.log.warn(
-        `Spotify API returned 429 for ${describeRequest(init.method, url)}. Waiting ${retryAfterSeconds}s before retry (${rateLimitRetryAttempts} retries left).`,
+        t("spotifyApi429", describeRequest(init.method, url), retryAfterSeconds, rateLimitRetryAttempts),
       );
       await sleep(retryAfterSeconds * 1000);
       return this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized, rateLimitRetryAttempts - 1);
@@ -335,14 +336,12 @@ export class SpotifyClient {
 
       if (this.shouldRetryWithProxy(response.status, payload)) {
         this.transportMode = "proxy";
-        this.log.warn("Spotify API geo-block detected (403). Retrying request via configured proxy.");
+        this.log.warn(t("spotifyGeoBlockProxy"));
         return this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized);
       }
 
       if (isSpotifyGeoBlock(response.status, payload) && !this.canUseProxy()) {
-        this.log.warn(
-          "Spotify geo-block detected but proxy is not configured. Set SPOTIFY_PROXY_ENABLED=true and SPOTIFY_PROXY_URL=http://user:pass@host:port.",
-        );
+        this.log.warn(t("spotifyGeoBlockNoProxy"));
       }
 
       throw new Error(`Spotify request failed (${response.status}): ${payload}`);

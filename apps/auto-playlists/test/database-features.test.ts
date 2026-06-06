@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AppConfig } from "../src/core/config.js";
 import { DatabaseFeatures } from "../src/persistence/database-features.js";
 import type { Logger } from "../src/shared/types.js";
+import { initLocale } from "../src/i18n/index.js";
 
 const baseConfig: AppConfig = {
   spotifyClientId: "client-id",
@@ -23,6 +24,7 @@ const baseConfig: AppConfig = {
   savedInYearYears: [],
   spotifyProxyEnabled: false,
   spotifyProxyUrl: "",
+  appLocale: "EN",
 };
 
 function createLogger(): Logger {
@@ -35,16 +37,18 @@ function createLogger(): Logger {
 
 describe("DatabaseFeatures", () => {
   it("disables DB persistence when DATABASE_URL is empty", async () => {
+    initLocale("EN");
     const logger = createLogger();
     const features = new DatabaseFeatures({ ...baseConfig, databaseUrl: "" }, null, logger);
 
     await features.initialize();
 
     expect(features.isPersistenceEnabled()).toBe(false);
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("DATABASE_URL пустой"));
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("DATABASE_URL"));
   });
 
   it("enables DB persistence when the connection check succeeds", async () => {
+    initLocale("EN");
     const logger = createLogger();
     const prisma = {
       $queryRawUnsafe: vi.fn().mockResolvedValue([{ ok: 1 }]),
@@ -59,10 +63,11 @@ describe("DatabaseFeatures", () => {
 
     expect(prisma.$queryRawUnsafe).toHaveBeenCalledWith("SELECT 1");
     expect(features.isPersistenceEnabled()).toBe(true);
-    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("оно проверено"));
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("verified"));
   });
 
   it("disables DB persistence when the connection check fails", async () => {
+    initLocale("EN");
     const logger = createLogger();
     const prisma = {
       $queryRawUnsafe: vi.fn().mockRejectedValue(new Error("connection refused")),
@@ -76,6 +81,6 @@ describe("DatabaseFeatures", () => {
     await features.initialize();
 
     expect(features.isPersistenceEnabled()).toBe(false);
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("не удается подключиться"));
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("unable to connect"));
   });
 });

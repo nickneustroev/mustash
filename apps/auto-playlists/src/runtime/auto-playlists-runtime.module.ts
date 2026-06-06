@@ -19,6 +19,7 @@ import { AutoPlaylistsSyncService } from "../features/playlist-definitions/auto-
 import { SavedTracksSource } from "../features/playlist-definitions/saved-tracks-source.js";
 import { createSavedInYearDefinitions } from "../features/saved-in-year/saved-in-year-definition.js";
 import { createSavedRecentDefinitions } from "../features/saved-recent/saved-recent-definition.js";
+import { t } from "../i18n/index.js";
 import { PersistenceModule } from "../persistence/persistence.module.js";
 import { estimateLivePlayedAt } from "../persistence/history-repository.js";
 import type { DatabaseFeatures } from "../persistence/database-features.js";
@@ -100,8 +101,8 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
 
             log.info(
               inserted
-                ? `Live track saved: ${snapshot.trackUri} at ${playedAt.toISOString()}.`
-                : `Live track already exists, refreshed metadata: ${snapshot.trackUri} at ${playedAt.toISOString()}.`,
+                ? t("liveTrackSaved", snapshot.trackUri, playedAt.toISOString())
+                : t("liveTrackAlreadyExists", snapshot.trackUri, playedAt.toISOString()),
             );
           },
         }),

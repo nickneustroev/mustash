@@ -1,0 +1,81 @@
+export const messages = {
+  receivedSignalShuttingDown: (signal: string) => `Получен сигнал ${signal}, завершение работы.`,
+
+  configLoaded: (config: string) => `Конфигурация загружена: ${config}`,
+  spotifyAuthReady: "Авторизация Spotify готова.",
+  stopping: (signal: string) => `Остановка (${signal}).`,
+
+  trackWatcherStarted: (pollIntervalMs: number) =>
+    `Мониторинг треков запущен. Интервал опроса: ${pollIntervalMs}мс`,
+  trackWatcherStopped: "Мониторинг треков остановлен.",
+  spotifyRateLimitedBackingOff: (delayMs: number) =>
+    `Spotify ограничил частоту запросов. Откладывание на ${delayMs}мс перед следующим опросом.`,
+  pollingFailed: (message: string, delayMs: number) =>
+    `Ошибка опроса: ${message}. Следующая попытка через ${delayMs}мс.`,
+
+  trackNotification: (artists: string, trackName: string) => `ТРЕК ${artists} - ${trackName}`,
+
+  noPlaylistDefinitionsConfigured: "Нет определений автоматических плейлистов.",
+  syncActive: (mode: string, definitions: number, interval: number, initialDelay: number) =>
+    `Синхронизация активна (${mode}, определений=${definitions}, интервал=${interval}мс, начальная задержка=${initialDelay}мс).`,
+  syncStopped: (mode: string) => `Синхронизация остановлена (${mode}).`,
+  syncCycleStarted: (mode: string) => `Цикл синхронизации начат (${mode}).`,
+  playlistNoLongerAvailable: (name: string) =>
+    `Плейлист "${name}" больше недоступен. Кэшированный ID удалён, будет создан заново при следующей синхронизации.`,
+  syncedPlaylist: (name: string, count: number) => `Синхронизирован "${name}" - ${count} треков.`,
+  syncCycleCompleted: (mode: string, updated: number, total: number) =>
+    `Цикл синхронизации завершён (${mode}, обновлено=${updated}/${total}).`,
+  syncRateLimited: (retryAfter: number, nextAttempt: string) =>
+    `Синхронизация ограничена по частоте. Повтор через ${retryAfter}с. Следующая попытка после ${nextAttempt}.`,
+  syncFailed: (mode: string, message: string) => `Синхронизация не удалась (${mode}): ${message}`,
+  playlistCreated: (name: string) => `Создан (${name}).`,
+  coverUploaded: (name: string) => `Обложка загружена (${name}).`,
+  coverUploadFailed: (name: string, message: string) =>
+    `Не удалось загрузить обложку для плейлиста ${name}: ${message}`,
+  archivedRemovedTrack: (artist: string, track: string, trackId: string) =>
+    `В архив добавлен удалённый трек: ${artist} - ${track} (${trackId}).`,
+  savedTracksSnapshotInvalid:
+    "Снимок сохранённых треков в AppState повреждён. Пересоздание снимка.",
+
+  databaseUrlEmpty:
+    "DATABASE_URL не указан. Приложение будет работать без функций, зависящих от БД: сохранение прослушанных треков и архив удалённых треков отключены.",
+  databaseClientNotCreated:
+    "Обнаружено подключение к БД, но клиент БД не создан. Приложение будет работать без функций, зависящих от БД.",
+  databaseConnected:
+    "Подключение к БД обнаружено и проверено. Приложение будет использовать функции, сохраняющие данные в БД.",
+  databaseConnectionFailed: (message: string) =>
+    `Подключение к БД обнаружено, но не удаётся подключиться: ${message}. Приложение будет работать без функций, зависящих от БД.`,
+
+  prismaDisconnectFailed: (message: string) => `Ошибка отключения Prisma: ${message}`,
+
+  spotifyTokenInvalid: (key: string) =>
+    `Данные токена Spotify в ключе AppState "${key}" повреждены.`,
+  spotifyTokenParseFailed: (key: string, message: string) =>
+    `Не удалось разобрать данные токена Spotify из ключа AppState "${key}": ${message}`,
+  spotifyTokensSaved: (key: string) => `Токены Spotify сохранены в ключ AppState "${key}".`,
+
+  noStoredSpotifyTokens: "Сохранённые токены Spotify не найдены, запуск авторизации.",
+  accessTokenNearExpiration: "Access token истекает скоро, обновление.",
+  openingSpotifyAuthorization: "Открытие авторизации Spotify в браузере.",
+  openSpotifyAuthorization: (url: string) =>
+    `Откройте ${url} для начала авторизации Spotify.`,
+  authorizationCallbackReceived:
+    "Callback авторизации получен. Обмен кода на токены.",
+  waitingForOAuthCallback: (host: string, port: number, path: string, redirectHost: string) =>
+    `Ожидание OAuth callback на ${host}:${port} (${path}), хост redirect URI: ${redirectHost}`,
+  authorizationEntrypoint: (url: string) => `Точка входа авторизации: ${url}`,
+  spotifyTokenExchangeSuccess: "Обмен токена Spotify завершён успешно.",
+
+  spotifyApi401:
+    "Spotify API вернул 401, обновление токена и повторная попытка.",
+  spotifyApi429: (requestDescription: string, retryAfter: number, retriesLeft: number) =>
+    `Spotify API вернул 429 для ${requestDescription}. Ожидание ${retryAfter}с перед повтором (осталось попыток: ${retriesLeft}).`,
+  spotifyGeoBlockProxy:
+    "Обнаружена гео-блокировка Spotify (403). Повтор запроса через настроенный прокси.",
+  spotifyGeoBlockNoProxy:
+    "Обнаружена гео-блокировка Spotify, но прокси не настроен. Установите SPOTIFY_PROXY_ENABLED=true и SPOTIFY_PROXY_URL=http://user:pass@host:port.",
+
+  liveTrackSaved: (uri: string, at: string) => `Трек сохранён: ${uri} в ${at}.`,
+  liveTrackAlreadyExists: (uri: string, at: string) =>
+    `Трек уже существует, метаданные обновлены: ${uri} в ${at}.`,
+} as const;

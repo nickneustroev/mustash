@@ -1,6 +1,7 @@
 import { PlayedTrackSource } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 import type { Logger } from "../shared/types.js";
+import { t } from "../i18n/index.js";
 import type { HistoryEntry, HistoryRepository } from "./types.js";
 
 export class PrismaHistoryRepository implements HistoryRepository {
@@ -108,7 +109,7 @@ export class PrismaHistoryRepository implements HistoryRepository {
     try {
       await this.prisma.$disconnect();
     } catch (error) {
-      this.logger.warn(`Prisma disconnect failed: ${(error as Error).message}`);
+      this.logger.warn(t("prismaDisconnectFailed", (error as Error).message));
     }
   }
 }

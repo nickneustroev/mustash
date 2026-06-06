@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Logger } from "../shared/types.js";
+import { t } from "../i18n/index.js";
 
 export class PrismaAppStateRepository {
   constructor(
@@ -39,7 +40,7 @@ export class PrismaAppStateRepository {
     try {
       await this.prisma.$disconnect();
     } catch (error) {
-      this.logger.warn(`Prisma disconnect failed: ${(error as Error).message}`);
+      this.logger.warn(t("prismaDisconnectFailed", (error as Error).message));
     }
   }
 }

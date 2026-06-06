@@ -15,6 +15,7 @@ import type { AutoPlaylistsSyncService } from "../features/playlist-definitions/
 import type { DatabaseFeatures } from "../persistence/database-features.js";
 import type { Logger } from "../shared/types.js";
 import type { AuthManager } from "../spotify/auth-manager.js";
+import { t } from "../i18n/index.js";
 import type { TrackWatcher } from "./track-watcher.js";
 
 @Injectable()
@@ -35,9 +36,9 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
   ) {}
 
   public async onModuleInit(): Promise<void> {
-    this.log.info(`Config loaded: ${JSON.stringify(getSafeConfigForLogs(this.cfg))}`);
+    this.log.info(t("configLoaded", JSON.stringify(getSafeConfigForLogs(this.cfg))));
     await this.authManager.initialize();
-    this.log.info("Spotify auth is ready.");
+    this.log.info(t("spotifyAuthReady"));
     await this.databaseFeatures.initialize();
 
     this.watcher.start();
@@ -51,7 +52,7 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     }
     this.shuttingDown = true;
 
-    this.log.info(`Stopping (${signal ?? "app.close"}).`);
+    this.log.info(t("stopping", signal ?? "app.close"));
     this.watcher.stop();
     this.autoPlaylistsFrequentSyncService?.stop();
     this.autoPlaylistsRareSyncService?.stop();

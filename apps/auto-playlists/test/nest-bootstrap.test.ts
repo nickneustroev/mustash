@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaClient } from "@prisma/client";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "../src/core/app.module.js";
+import { initLocale } from "../src/i18n/index.js";
 import { AutoPlaylistsSyncService } from "../src/features/playlist-definitions/auto-playlists-sync-service.js";
 import { TrackWatcher } from "../src/runtime/track-watcher.js";
 import { AuthManager } from "../src/spotify/auth-manager.js";
@@ -16,6 +17,9 @@ describe("Nest bootstrap lifecycle", () => {
     process.env.POLL_INTERVAL_MS = "2500";
     process.env.SAVED_RECENT_WINDOWS = "20,50,100";
     process.env.SAVED_IN_YEAR_YEARS = "2025";
+    process.env.APP_LOCALE = "EN";
+
+    initLocale("EN");
 
     vi.spyOn(AuthManager.prototype, "initialize").mockResolvedValue();
     vi.spyOn(TrackWatcher.prototype, "start").mockImplementation(() => {});

@@ -1,5 +1,6 @@
 import type { AppStateRepository } from "../persistence/types.js";
 import type { Logger, OAuthTokenStore, OAuthTokens } from "../shared/types.js";
+import { t } from "../i18n/index.js";
 
 const DEFAULT_APP_STATE_KEY = "spotify_oauth_tokens:auto_playlists";
 
@@ -19,7 +20,7 @@ export class AppStateOAuthTokenStore implements OAuthTokenStore {
     try {
       const parsed = JSON.parse(raw) as Partial<OAuthTokens>;
       if (!parsed.accessToken || !parsed.refreshToken || !parsed.expiresAtEpochMs) {
-        this.logger.warn(`Spotify token payload in AppState key "${this.storageKey}" is invalid.`);
+        this.logger.warn(t("spotifyTokenInvalid", this.storageKey));
         return null;
       }
 
@@ -30,7 +31,7 @@ export class AppStateOAuthTokenStore implements OAuthTokenStore {
       };
     } catch (error) {
       this.logger.warn(
-        `Unable to parse Spotify token payload from AppState key "${this.storageKey}": ${(error as Error).message}`,
+        t("spotifyTokenParseFailed", this.storageKey, (error as Error).message),
       );
       return null;
     }
@@ -38,6 +39,6 @@ export class AppStateOAuthTokenStore implements OAuthTokenStore {
 
   public async saveTokens(tokens: OAuthTokens): Promise<void> {
     await this.appStateRepository.setValue(this.storageKey, JSON.stringify(tokens));
-    this.logger.info(`Spotify tokens saved to AppState key "${this.storageKey}".`);
+    this.logger.info(t("spotifyTokensSaved", this.storageKey));
   }
 }
