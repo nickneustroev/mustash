@@ -102,6 +102,10 @@ export function loadConfig(): AppConfig {
 }
 
 function loadAppEnv(): void {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST_WORKER_ID) {
+    return;
+  }
+
   loadEnv({ quiet: true });
 }
 

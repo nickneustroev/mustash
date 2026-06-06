@@ -84,6 +84,7 @@ SAVED_IN_YEAR_YEARS=2024,2025
 6. Spotify OAuth / proxy настройки
 
 Если `DATABASE_URL` пустой или подключение к БД недоступно, приложение продолжит работу без сохранения прослушанных треков и архива удаленных треков.
+В таком режиме `AppState`, включая OAuth-токены Spotify, сохраняется локально в `temp/app-state.json`.
 
 `AUTO_PLAYLISTS_PLAYLIST_PREFIX` можно оставить пустым:
 

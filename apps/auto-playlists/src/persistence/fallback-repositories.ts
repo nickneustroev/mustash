@@ -1,21 +1,53 @@
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import type { AppStateRepository, ArchiveRepository, ArchivedTrackItem, HistoryEntry, HistoryRepository } from "./types.js";
 
-export class MemoryAppStateRepository implements AppStateRepository {
-  private readonly values = new Map<string, string>();
+type AppStateFilePayload = Record<string, string>;
+
+export class FileAppStateRepository implements AppStateRepository {
+  constructor(private readonly filePath = resolve("temp", "app-state.json")) {}
 
   public async getValue(key: string): Promise<string | null> {
-    return this.values.get(key) ?? null;
+    const values = await this.readValues();
+    return values[key] ?? null;
   }
 
   public async setValue(key: string, value: string): Promise<void> {
-    this.values.set(key, value);
+    const values = await this.readValues();
+    values[key] = value;
+    await this.writeValues(values);
   }
 
   public async deleteValue(key: string): Promise<void> {
-    this.values.delete(key);
+    const values = await this.readValues();
+    delete values[key];
+    await this.writeValues(values);
   }
 
   public async close(): Promise<void> {}
+
+  private async readValues(): Promise<AppStateFilePayload> {
+    try {
+      const raw = await readFile(this.filePath, "utf8");
+      const parsed = JSON.parse(raw) as unknown;
+      if (!isStringRecord(parsed)) {
+        return {};
+      }
+      return parsed;
+    } catch (error) {
+      if (isNotFoundError(error) || error instanceof SyntaxError) {
+        return {};
+      }
+      throw error;
+    }
+  }
+
+  private async writeValues(values: AppStateFilePayload): Promise<void> {
+    await mkdir(dirname(this.filePath), { recursive: true });
+    const tempPath = `${this.filePath}.${process.pid}.tmp`;
+    await writeFile(tempPath, `${JSON.stringify(values, null, 2)}\n`, "utf8");
+    await rename(tempPath, this.filePath);
+  }
 }
 
 export class ResilientAppStateRepository implements AppStateRepository {
@@ -89,4 +121,22 @@ export class DisabledArchiveRepository implements ArchiveRepository {
   }
 
   public async close(): Promise<void> {}
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every((item) => typeof item === "string")
+  );
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "ENOENT"
+  );
 }

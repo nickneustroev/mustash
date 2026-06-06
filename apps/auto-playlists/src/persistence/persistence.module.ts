@@ -18,7 +18,7 @@ import { DatabaseFeatures } from "./database-features.js";
 import {
   DisabledArchiveRepository,
   DisabledHistoryRepository,
-  MemoryAppStateRepository,
+  FileAppStateRepository,
   ResilientAppStateRepository,
 } from "./fallback-repositories.js";
 import { PrismaHistoryRepository } from "./history-repository.js";
@@ -44,7 +44,7 @@ import type { AppStateRepository, ArchiveRepository, HistoryRepository } from ".
       provide: APP_STATE_REPOSITORY,
       inject: [PRISMA_CLIENT, APP_LOGGER],
       useFactory: (prisma: PrismaClient | null, log: Logger): AppStateRepository => {
-        const fallback = new MemoryAppStateRepository();
+        const fallback = new FileAppStateRepository();
         return prisma
           ? new ResilientAppStateRepository(new PrismaAppStateRepository(prisma, log), fallback)
           : fallback;
