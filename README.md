@@ -56,7 +56,6 @@ SPOTIFY_PROXY_URL=
 # Optional. Leave empty to run without DB-backed history and removed-track archive.
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper
 POLL_INTERVAL_MS=2500
-PRINT_ON_START=true
 
 AUTO_PLAYLISTS_PLAYLIST_PREFIX=
 AUTO_PLAYLISTS_PLAYLIST_SUFFIX=[AUTO]
@@ -77,7 +76,7 @@ SAVED_IN_YEAR_YEARS=2024,2025
 `auto-playlists` использует из `.env`:
 
 1. Postgres (`DATABASE_URL`) для live history, архива удаленных треков и постоянного `AppState`
-2. playback polling (`POLL_INTERVAL_MS`, `PRINT_ON_START`)
+2. playback polling (`POLL_INTERVAL_MS`)
 3. runtime авто-плейлистов (`AUTO_PLAYLISTS_*`)
 4. оформление обложек (`SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR`)
 5. правила авто-плейлистов (`SAVED_RECENT_WINDOWS`, `SAVED_IN_YEAR_YEARS`)

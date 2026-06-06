@@ -7,7 +7,6 @@ import type { ConsoleNotifier } from "./console-notifier.js";
 
 interface TrackWatcherOptions {
   pollIntervalMs: number;
-  printOnStart: boolean;
   onNewTrack?: (snapshot: PlaybackSnapshot) => Promise<void>;
 }
 
@@ -56,7 +55,7 @@ export class TrackWatcher {
 
     try {
       const snapshot = await this.spotifyClient.getCurrentlyPlaying();
-      const decision = decideTrackEvent(this.state, snapshot, this.opts.printOnStart);
+      const decision = decideTrackEvent(this.state, snapshot);
       this.state = decision.nextState;
 
       if (decision.shouldEmit && snapshot) {

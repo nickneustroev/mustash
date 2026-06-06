@@ -78,7 +78,6 @@ type SyncRunner = <T>(modeName: string, run: () => Promise<T>) => Promise<T>;
       ) =>
         new TrackWatcher(spotifyClient, notifier, log, {
           pollIntervalMs: cfg.pollIntervalMs,
-          printOnStart: cfg.printOnStart,
           onNewTrack: async (snapshot) => {
             if (!snapshot.trackUri) {
               return;

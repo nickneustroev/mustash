@@ -13,7 +13,6 @@ export interface TrackDecisionResult {
 export function decideTrackEvent(
   state: TrackDecisionState,
   snapshot: PlaybackSnapshot | null,
-  printOnStart: boolean,
 ): TrackDecisionResult {
   if (!snapshot) {
     return { shouldEmit: false, nextState: state };
@@ -30,16 +29,6 @@ export function decideTrackEvent(
   }
 
   if (!state.initialized) {
-    if (!printOnStart) {
-      return {
-        shouldEmit: false,
-        nextState: {
-          initialized: true,
-          lastReportedTrackId: snapshot.trackId,
-        },
-      };
-    }
-
     return {
       shouldEmit: snapshot.isPlaying,
       nextState: {

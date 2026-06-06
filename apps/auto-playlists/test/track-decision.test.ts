@@ -16,17 +16,17 @@ function trackSnapshot(trackId: string, isPlaying = true): PlaybackSnapshot {
 }
 
 describe("decideTrackEvent", () => {
-  it("does not emit on first poll when PRINT_ON_START=false", () => {
+  it("does not emit on first poll when paused", () => {
     const state: TrackDecisionState = { initialized: false, lastReportedTrackId: null };
-    const result = decideTrackEvent(state, trackSnapshot("t1"), false);
+    const result = decideTrackEvent(state, trackSnapshot("t1", false));
 
     expect(result.shouldEmit).toBe(false);
-    expect(result.nextState).toEqual({ initialized: true, lastReportedTrackId: "t1" });
+    expect(result.nextState).toEqual({ initialized: true, lastReportedTrackId: null });
   });
 
-  it("emits on first poll when PRINT_ON_START=true and track is playing", () => {
+  it("emits on first poll when track is playing", () => {
     const state: TrackDecisionState = { initialized: false, lastReportedTrackId: null };
-    const result = decideTrackEvent(state, trackSnapshot("t1"), true);
+    const result = decideTrackEvent(state, trackSnapshot("t1"));
 
     expect(result.shouldEmit).toBe(true);
     expect(result.nextState).toEqual({ initialized: true, lastReportedTrackId: "t1" });
@@ -34,7 +34,7 @@ describe("decideTrackEvent", () => {
 
   it("does not emit duplicate for same track", () => {
     const state: TrackDecisionState = { initialized: true, lastReportedTrackId: "t1" };
-    const result = decideTrackEvent(state, trackSnapshot("t1"), false);
+    const result = decideTrackEvent(state, trackSnapshot("t1"));
 
     expect(result.shouldEmit).toBe(false);
     expect(result.nextState).toEqual(state);
@@ -42,7 +42,7 @@ describe("decideTrackEvent", () => {
 
   it("emits when track id changed", () => {
     const state: TrackDecisionState = { initialized: true, lastReportedTrackId: "t1" };
-    const result = decideTrackEvent(state, trackSnapshot("t2"), false);
+    const result = decideTrackEvent(state, trackSnapshot("t2"));
 
     expect(result.shouldEmit).toBe(true);
     expect(result.nextState.lastReportedTrackId).toBe("t2");
@@ -50,7 +50,7 @@ describe("decideTrackEvent", () => {
 
   it("does not emit while paused", () => {
     const state: TrackDecisionState = { initialized: true, lastReportedTrackId: "t1" };
-    const result = decideTrackEvent(state, trackSnapshot("t2", false), false);
+    const result = decideTrackEvent(state, trackSnapshot("t2", false));
 
     expect(result.shouldEmit).toBe(false);
     expect(result.nextState).toEqual(state);

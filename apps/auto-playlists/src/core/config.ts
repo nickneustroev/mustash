@@ -23,11 +23,6 @@ const schema = z.object({
   SPOTIFY_REDIRECT_URI: z.string().url(),
   POLL_INTERVAL_MS: z.coerce.number().int().min(500).default(2500),
   SPOTIFY_MIN_REQUEST_GAP_MS: z.coerce.number().int().min(0).default(0),
-  PRINT_ON_START: z
-    .string()
-    .optional()
-    .transform((v) => v === "true")
-    .default(true),
   TRACK_MONITORING_ENABLED: z
     .string()
     .optional()
@@ -57,7 +52,6 @@ export interface AppConfig {
   spotifyRedirectUri: string;
   pollIntervalMs: number;
   spotifyMinRequestGapMs: number;
-  printOnStart: boolean;
   trackMonitoringEnabled: boolean;
   databaseUrl: string;
   requestTimeoutMs: number;
@@ -93,7 +87,6 @@ export function loadConfig(): AppConfig {
     spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI,
     pollIntervalMs: env.POLL_INTERVAL_MS,
     spotifyMinRequestGapMs: env.SPOTIFY_MIN_REQUEST_GAP_MS,
-    printOnStart: env.PRINT_ON_START,
     trackMonitoringEnabled: env.TRACK_MONITORING_ENABLED,
     databaseUrl: env.DATABASE_URL,
     requestTimeoutMs: 5000,
@@ -125,7 +118,6 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     spotifyRedirectUri: cfg.spotifyRedirectUri,
     pollIntervalMs: cfg.pollIntervalMs,
     spotifyMinRequestGapMs: cfg.spotifyMinRequestGapMs,
-    printOnStart: cfg.printOnStart,
     trackMonitoringEnabled: cfg.trackMonitoringEnabled,
     databaseUrl: cfg.databaseUrl,
     requestTimeoutMs: cfg.requestTimeoutMs,
