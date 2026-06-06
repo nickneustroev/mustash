@@ -28,6 +28,11 @@ const schema = z.object({
     .optional()
     .transform((v) => v === "true")
     .default(true),
+  TRACK_MONITORING_ENABLED: z
+    .string()
+    .optional()
+    .transform((v) => v !== "false")
+    .default(true),
   DATABASE_URL: z.string().optional().default(""),
   AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
@@ -53,6 +58,7 @@ export interface AppConfig {
   pollIntervalMs: number;
   spotifyMinRequestGapMs: number;
   printOnStart: boolean;
+  trackMonitoringEnabled: boolean;
   databaseUrl: string;
   requestTimeoutMs: number;
   autoPlaylistsPlaylistPrefix: string;
@@ -88,6 +94,7 @@ export function loadConfig(): AppConfig {
     pollIntervalMs: env.POLL_INTERVAL_MS,
     spotifyMinRequestGapMs: env.SPOTIFY_MIN_REQUEST_GAP_MS,
     printOnStart: env.PRINT_ON_START,
+    trackMonitoringEnabled: env.TRACK_MONITORING_ENABLED,
     databaseUrl: env.DATABASE_URL,
     requestTimeoutMs: 5000,
     autoPlaylistsPlaylistPrefix: env.AUTO_PLAYLISTS_PLAYLIST_PREFIX,
@@ -119,6 +126,7 @@ export function getSafeConfigForLogs(cfg: AppConfig): Record<string, string | nu
     pollIntervalMs: cfg.pollIntervalMs,
     spotifyMinRequestGapMs: cfg.spotifyMinRequestGapMs,
     printOnStart: cfg.printOnStart,
+    trackMonitoringEnabled: cfg.trackMonitoringEnabled,
     databaseUrl: cfg.databaseUrl,
     requestTimeoutMs: cfg.requestTimeoutMs,
     autoPlaylistsPlaylistPrefix: cfg.autoPlaylistsPlaylistPrefix,

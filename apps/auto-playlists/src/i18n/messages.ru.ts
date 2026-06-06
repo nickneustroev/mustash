@@ -8,6 +8,7 @@ export const messages = {
   trackWatcherStarted: (pollIntervalMs: number) =>
     `Мониторинг треков запущен. Интервал опроса: ${pollIntervalMs}мс`,
   trackWatcherStopped: "Мониторинг треков остановлен.",
+  trackMonitoringDisabled: "Мониторинг треков отключен (TRACK_MONITORING_ENABLED=false).",
   spotifyRateLimitedBackingOff: (delayMs: number) =>
     `Spotify ограничил частоту запросов. Откладывание на ${delayMs}мс перед следующим опросом.`,
   pollingFailed: (message: string, delayMs: number) =>

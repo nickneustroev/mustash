@@ -41,7 +41,11 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     this.log.info(t("spotifyAuthReady"));
     await this.databaseFeatures.initialize();
 
-    this.watcher.start();
+    if (this.cfg.trackMonitoringEnabled) {
+      this.watcher.start();
+    } else {
+      this.log.info(t("trackMonitoringDisabled"));
+    }
     this.autoPlaylistsFrequentSyncService?.start();
     this.autoPlaylistsRareSyncService?.start();
   }
