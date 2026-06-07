@@ -87,6 +87,7 @@ export interface AppConfig {
 
 export function loadConfig(): AppConfig {
   loadAppEnv();
+  assertSpotifyCredentialsConfigured(process.env);
   const parsed = schema.safeParse(process.env);
 
   if (!parsed.success) {
@@ -119,6 +120,20 @@ export function loadConfig(): AppConfig {
     spotifyProxyUrl: env.SPOTIFY_PROXY_URL,
     appLocale: env.APP_LOCALE,
   };
+}
+
+function assertSpotifyCredentialsConfigured(env: NodeJS.ProcessEnv): void {
+  const missingKeys = [
+    isMissingEnvValue(env.SPOTIFY_CLIENT_ID) ? "SPOTIFY_CLIENT_ID" : null,
+    isMissingEnvValue(env.SPOTIFY_CLIENT_SECRET) ? "SPOTIFY_CLIENT_SECRET" : null,
+  ].filter((value): value is "SPOTIFY_CLIENT_ID" | "SPOTIFY_CLIENT_SECRET" => value !== null);
+
+  if (missingKeys.length === 0) {
+    return;
+  }
+
+  const locale = resolveAppLocale(env.APP_LOCALE);
+  throw new Error(buildMissingSpotifyCredentialsMessage(locale, missingKeys));
 }
 
 function loadAppEnv(): void {
@@ -232,4 +247,27 @@ export function parsePlaylistSuffix(value: string | undefined): string {
 
   const normalized = value.trim();
   return normalized.length === 0 ? "[AUTO]" : normalized;
+}
+
+function isMissingEnvValue(value: string | undefined): boolean {
+  return value === undefined || value.trim().length === 0;
+}
+
+function resolveAppLocale(value: string | undefined): AppConfig["appLocale"] {
+  return value === "RU" ? "RU" : "EN";
+}
+
+function buildMissingSpotifyCredentialsMessage(
+  locale: AppConfig["appLocale"],
+  missingKeys: ("SPOTIFY_CLIENT_ID" | "SPOTIFY_CLIENT_SECRET")[],
+): string {
+  if (locale === "RU") {
+    return missingKeys.length === 1
+      ? `Не указана обязательная переменная окружения ${missingKeys[0]}.`
+      : `Не указаны обязательные переменные окружения ${missingKeys.join(" и ")}.`;
+  }
+
+  return missingKeys.length === 1
+    ? `Required environment variable ${missingKeys[0]} is not set.`
+    : `Required environment variables ${missingKeys.join(" and ")} are not set.`;
 }

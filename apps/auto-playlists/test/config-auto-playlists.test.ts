@@ -101,6 +101,23 @@ describe("auto-playlists config parsers", () => {
     expect(parsePlaylistSuffix("[SYNC]")).toBe("[SYNC]");
   });
 
+  it("throws a localized russian error when spotify credentials are missing", () => {
+    process.env.APP_LOCALE = "RU";
+
+    expect(() => loadConfig()).toThrow(
+      "Не указаны обязательные переменные окружения SPOTIFY_CLIENT_ID и SPOTIFY_CLIENT_SECRET.",
+    );
+  });
+
+  it("throws a localized english error when only spotify client secret is missing", () => {
+    process.env.APP_LOCALE = "EN";
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+
+    expect(() => loadConfig()).toThrow(
+      "Required environment variable SPOTIFY_CLIENT_SECRET is not set.",
+    );
+  });
+
   it("uses env.example defaults for optional runtime parameters", () => {
     process.env.SPOTIFY_CLIENT_ID = "test-client-id";
     process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";

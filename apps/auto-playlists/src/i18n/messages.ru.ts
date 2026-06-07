@@ -68,6 +68,10 @@ export const messages = {
     `Ожидание OAuth callback на ${host}:${port} (${path}), хост redirect URI: ${redirectHost}`,
   authorizationEntrypoint: (url: string) => `Точка входа авторизации: ${url}`,
   spotifyTokenExchangeSuccess: "Обмен токена Spotify завершён успешно.",
+  spotifyTokenExchangeFailed: (status: number, payload: string) =>
+    `Не удалось обменять код Spotify на токен (${status}): ${payload}`,
+  spotifyTokenRefreshFailed: (status: number, payload: string) =>
+    `Не удалось обновить токен Spotify (${status}): ${payload}`,
   spotifyConnectionValidationMissingUserId:
     "Spotify ответил, но не вернул идентификатор пользователя.",
   spotifyProxyValidatedUsingProxy:

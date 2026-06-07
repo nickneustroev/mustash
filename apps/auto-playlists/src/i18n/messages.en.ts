@@ -66,6 +66,10 @@ export const messages = {
     `Waiting for OAuth callback on ${host}:${port} (${path}), redirect URI host: ${redirectHost}`,
   authorizationEntrypoint: (url: string) => `Authorization entrypoint: ${url}`,
   spotifyTokenExchangeSuccess: "Spotify token exchange completed successfully.",
+  spotifyTokenExchangeFailed: (status: number, payload: string) =>
+    `Token exchange failed (${status}): ${payload}`,
+  spotifyTokenRefreshFailed: (status: number, payload: string) =>
+    `Token refresh failed (${status}): ${payload}`,
   spotifyConnectionValidationMissingUserId:
     "Spotify responded, but did not return a user id.",
   spotifyProxyValidatedUsingProxy:

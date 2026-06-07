@@ -40,11 +40,8 @@ export class AuthManager {
       return;
     }
 
-    if (Date.now() + 15000 >= this.tokens.expiresAtEpochMs) {
-      this.log.info(t("accessTokenNearExpiration"));
-      this.tokens = await this.refreshAccessToken(this.tokens.refreshToken);
-      await this.persistTokens(this.tokens);
-    }
+    this.tokens = await this.refreshAccessToken(this.tokens.refreshToken);
+    await this.persistTokens(this.tokens);
   }
 
   public async getAccessToken(): Promise<string> {
@@ -195,7 +192,7 @@ export class AuthManager {
 
     if (!response.ok) {
       const payload = await response.text();
-      throw new Error(`Token exchange failed (${response.status}): ${payload}`);
+      throw new Error(t("spotifyTokenExchangeFailed", response.status, payload));
     }
 
     const data = (await response.json()) as SpotifyTokenResponse;
@@ -230,7 +227,7 @@ export class AuthManager {
 
     if (!response.ok) {
       const payload = await response.text();
-      throw new Error(`Token refresh failed (${response.status}): ${payload}`);
+      throw new Error(t("spotifyTokenRefreshFailed", response.status, payload));
     }
 
     const data = (await response.json()) as SpotifyTokenResponse;
