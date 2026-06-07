@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Logger, SpotifyClientConfig } from "../src/shared/types.js";
 import { SpotifyClient } from "../src/spotify/spotify-client.js";
 import { SpotifyRateLimitError } from "../src/spotify/errors.js";
@@ -17,16 +17,24 @@ const cfg: SpotifyClientConfig = {
   spotifyProxyUrl: "",
 };
 
-function createClient(fetchImpl: typeof fetch): SpotifyClient {
+function createClient(fetchImpl: typeof fetch, overrides: Partial<SpotifyClientConfig> = {}): SpotifyClient {
   const auth = {
     getAccessToken: vi.fn().mockResolvedValue("token"),
     handleUnauthorized: vi.fn().mockResolvedValue(undefined),
   } as unknown as AuthManager;
 
-  return new SpotifyClient(auth, cfg, log, fetchImpl);
+  return new SpotifyClient(auth, { ...cfg, ...overrides }, log, fetchImpl);
 }
 
 describe("SpotifyClient rate limiting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("retries after 429 and honors retry-after before succeeding", async () => {
     vi.useFakeTimers();
     const fetchImpl = vi
@@ -99,5 +107,70 @@ describe("SpotifyClient rate limiting", () => {
     await vi.runAllTimersAsync();
     await request;
     expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it("uses configured proxy when startup validation succeeds", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async (_url, init) => {
+      expect(init && "dispatcher" in init && init.dispatcher).toBeTruthy();
+      return new Response(JSON.stringify({ id: "user-1" }), {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+    });
+
+    const client = createClient(fetchImpl, {
+      spotifyProxyUrl: "http://user:pass@127.0.0.1:8080",
+    });
+
+    await expect(client.initializeTransport()).resolves.toBeUndefined();
+    await expect(client.getCurrentUserId()).resolves.toBe("user-1");
+    expect(log.info).toHaveBeenCalledWith("A proxy is configured and validated, so it will be used.");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back to direct connection when configured proxy validation fails", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async (_url, init) => {
+      if (init && "dispatcher" in init && init.dispatcher) {
+        throw new Error("proxy unreachable");
+      }
+
+      return new Response(JSON.stringify({ id: "user-1" }), {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+    });
+
+    const client = createClient(fetchImpl, {
+      spotifyProxyUrl: "http://user:pass@127.0.0.1:8080",
+    });
+
+    await expect(client.initializeTransport()).resolves.toBeUndefined();
+    await expect(client.getCurrentUserId()).resolves.toBe("user-1");
+    expect(log.warn).toHaveBeenCalledWith(
+      "A proxy is configured but not working, so a direct connection will be used. Reason: proxy unreachable",
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+  });
+
+  it("stops startup when direct Spotify connection is not fully available", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response('{"error":{"message":"Spotify is unavailable in this country"}}', {
+        status: 403,
+        headers: {
+          "content-type": "application/json",
+        },
+      }),
+    );
+
+    const client = createClient(fetchImpl);
+
+    await expect(client.initializeTransport()).rejects.toThrow(
+      "Direct Spotify connection validation failed. Spotify is not responding fully or access is region-blocked. The application is stopping.",
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });

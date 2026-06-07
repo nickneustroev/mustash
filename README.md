@@ -51,7 +51,7 @@ SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/callback
 SPOTIFY_LISTEN_PORT=3000
 
-SPOTIFY_PROXY_ENABLED=false
+# Optional. If set, the app validates the proxy at startup and uses it when available.
 SPOTIFY_PROXY_URL=
 # Optional. Leave empty to run without DB-backed history and removed-track archive.
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper
@@ -81,6 +81,15 @@ SAVED_IN_YEAR_YEARS=2024,2025
 4. оформление обложек (`SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR`)
 5. правила авто-плейлистов (`SAVED_RECENT_WINDOWS`, `SAVED_IN_YEAR_YEARS`)
 6. Spotify OAuth / proxy настройки
+
+`SPOTIFY_PROXY_URL` опционален. Если он пустой, приложение ничего не пишет про прокси и сразу проверяет обычное подключение к Spotify.
+
+Если `SPOTIFY_PROXY_URL` задан, приложение при запуске:
+
+1. проверяет прокси;
+2. при успехе пишет, что прокси указан и проверен, и использует его;
+3. при неуспехе пишет, что прокси указан, но не работает, и переключается на обычное подключение;
+4. перед стартом runtime обязательно валидирует обычное подключение к Spotify, и если Spotify недоступен полноценно или доступ ограничен по региону, завершает запуск с явной ошибкой.
 
 Если `DATABASE_URL` пустой или подключение к БД недоступно, приложение продолжит работу без сохранения прослушанных треков и архива удаленных треков.
 В таком режиме `AppState`, включая OAuth-токены Spotify, сохраняется локально в `temp/app-state.json`.

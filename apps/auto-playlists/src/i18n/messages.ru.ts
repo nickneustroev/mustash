@@ -66,6 +66,14 @@ export const messages = {
     `Ожидание OAuth callback на ${host}:${port} (${path}), хост redirect URI: ${redirectHost}`,
   authorizationEntrypoint: (url: string) => `Точка входа авторизации: ${url}`,
   spotifyTokenExchangeSuccess: "Обмен токена Spotify завершён успешно.",
+  spotifyConnectionValidationMissingUserId:
+    "Spotify ответил, но не вернул идентификатор пользователя.",
+  spotifyProxyValidatedUsingProxy:
+    "Указан прокси, прокси проверен, поэтому он будет использоваться.",
+  spotifyProxyConfiguredButFailedUsingDirect: (message: string) =>
+    `Указан прокси, но он не работает, поэтому будет использовано обычное подключение. Причина: ${message}`,
+  spotifyDirectConnectionFailed: (message: string) =>
+    `Обычное подключение к Spotify не прошло проверку. Spotify не отвечает полноценно или доступ ограничен по региону. Приложение остановлено. Причина: ${message}`,
 
   spotifyApi401:
     "Spotify API вернул 401, обновление токена и повторная попытка.",
@@ -74,7 +82,7 @@ export const messages = {
   spotifyGeoBlockProxy:
     "Обнаружена гео-блокировка Spotify (403). Повтор запроса через настроенный прокси.",
   spotifyGeoBlockNoProxy:
-    "Обнаружена гео-блокировка Spotify, но прокси не настроен. Установите SPOTIFY_PROXY_ENABLED=true и SPOTIFY_PROXY_URL=http://user:pass@host:port.",
+    "Обнаружена гео-блокировка Spotify, но прокси не настроен. Установите SPOTIFY_PROXY_URL=http://user:pass@host:port.",
 
   liveTrackSaved: (uri: string, at: string) => `Трек сохранён: ${uri} в ${at}.`,
   liveTrackAlreadyExists: (uri: string, at: string) =>

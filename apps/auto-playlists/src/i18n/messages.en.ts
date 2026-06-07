@@ -64,13 +64,21 @@ export const messages = {
     `Waiting for OAuth callback on ${host}:${port} (${path}), redirect URI host: ${redirectHost}`,
   authorizationEntrypoint: (url: string) => `Authorization entrypoint: ${url}`,
   spotifyTokenExchangeSuccess: "Spotify token exchange completed successfully.",
+  spotifyConnectionValidationMissingUserId:
+    "Spotify responded, but did not return a user id.",
+  spotifyProxyValidatedUsingProxy:
+    "A proxy is configured and validated, so it will be used.",
+  spotifyProxyConfiguredButFailedUsingDirect: (message: string) =>
+    `A proxy is configured but not working, so a direct connection will be used. Reason: ${message}`,
+  spotifyDirectConnectionFailed: (message: string) =>
+    `Direct Spotify connection validation failed. Spotify is not responding fully or access is region-blocked. The application is stopping. Reason: ${message}`,
 
   spotifyApi401: "Spotify API returned 401, refreshing token and retrying once.",
   spotifyApi429: (requestDescription: string, retryAfter: number, retriesLeft: number) =>
     `Spotify API returned 429 for ${requestDescription}. Waiting ${retryAfter}s before retry (${retriesLeft} retries left).`,
   spotifyGeoBlockProxy: "Spotify API geo-block detected (403). Retrying request via configured proxy.",
   spotifyGeoBlockNoProxy:
-    "Spotify geo-block detected but proxy is not configured. Set SPOTIFY_PROXY_ENABLED=true and SPOTIFY_PROXY_URL=http://user:pass@host:port.",
+    "Spotify geo-block detected but proxy is not configured. Set SPOTIFY_PROXY_URL=http://user:pass@host:port.",
 
   liveTrackSaved: (uri: string, at: string) => `Live track saved: ${uri} at ${at}.`,
   liveTrackAlreadyExists: (uri: string, at: string) =>

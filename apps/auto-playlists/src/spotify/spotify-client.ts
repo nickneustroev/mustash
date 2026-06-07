@@ -78,7 +78,26 @@ export class SpotifyClient {
     this.log = log;
     this.fetchImpl = fetchImpl;
     this.proxyDispatcher = cfg.spotifyProxyUrl ? new ProxyAgent(cfg.spotifyProxyUrl) : null;
-    this.transportMode = this.shouldStartWithProxy() ? "proxy" : "direct";
+    this.transportMode = "direct";
+  }
+
+  public async initializeTransport(): Promise<void> {
+    if (this.isProxyConfigured()) {
+      const proxyValidation = await this.validateConnection("proxy");
+      if (proxyValidation.ok) {
+        this.transportMode = "proxy";
+        this.log.info(t("spotifyProxyValidatedUsingProxy"));
+        return;
+      }
+
+      this.transportMode = "direct";
+      this.log.warn(t("spotifyProxyConfiguredButFailedUsingDirect", proxyValidation.message));
+    }
+
+    const directValidation = await this.validateConnection("direct");
+    if (!directValidation.ok) {
+      throw new Error(t("spotifyDirectConnectionFailed", directValidation.message));
+    }
   }
 
   public async getCurrentlyPlaying(): Promise<PlaybackSnapshot | null> {
@@ -300,6 +319,7 @@ export class SpotifyClient {
     init: RequestInit,
     allowRetryOnUnauthorized: boolean,
     rateLimitRetryAttempts = SpotifyClient.RATE_LIMIT_RETRY_ATTEMPTS,
+    modeOverride?: TransportMode,
   ): Promise<Response> {
     await this.waitForRateLimitWindow();
     await this.waitForRequestGap();
@@ -308,12 +328,12 @@ export class SpotifyClient {
     const headers = new Headers(init.headers ?? {});
     headers.set("Authorization", `Bearer ${accessToken}`);
 
-    const response = await this.fetchWithTransport(url, init, headers, this.transportMode);
+    const response = await this.fetchWithTransport(url, init, headers, modeOverride ?? this.transportMode);
 
     if (response.status === 401 && allowRetryOnUnauthorized) {
       this.log.warn(t("spotifyApi401"));
       await this.auth.handleUnauthorized();
-      return this.requestWithAuthInternal(url, init, false, rateLimitRetryAttempts);
+      return this.requestWithAuthInternal(url, init, false, rateLimitRetryAttempts, modeOverride);
     }
 
     if (response.status === 429) {
@@ -328,7 +348,13 @@ export class SpotifyClient {
         t("spotifyApi429", describeRequest(init.method, url), retryAfterSeconds, rateLimitRetryAttempts),
       );
       await sleep(retryAfterSeconds * 1000);
-      return this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized, rateLimitRetryAttempts - 1);
+      return this.requestWithAuthInternal(
+        url,
+        init,
+        allowRetryOnUnauthorized,
+        rateLimitRetryAttempts - 1,
+        modeOverride,
+      );
     }
 
     if (!response.ok) {
@@ -337,7 +363,13 @@ export class SpotifyClient {
       if (this.shouldRetryWithProxy(response.status, payload)) {
         this.transportMode = "proxy";
         this.log.warn(t("spotifyGeoBlockProxy"));
-        return this.requestWithAuthInternal(url, init, allowRetryOnUnauthorized);
+        return this.requestWithAuthInternal(
+          url,
+          init,
+          allowRetryOnUnauthorized,
+          SpotifyClient.RATE_LIMIT_RETRY_ATTEMPTS,
+          modeOverride,
+        );
       }
 
       if (isSpotifyGeoBlock(response.status, payload) && !this.canUseProxy()) {
@@ -385,16 +417,42 @@ export class SpotifyClient {
     return this.fetchImpl(url, requestInit);
   }
 
-  private shouldStartWithProxy(): boolean {
-    return this.canUseProxy();
+  private canUseProxy(): boolean {
+    return this.isProxyConfigured() && Boolean(this.proxyDispatcher);
   }
 
-  private canUseProxy(): boolean {
-    return this.cfg.spotifyProxyEnabled && Boolean(this.proxyDispatcher);
+  private isProxyConfigured(): boolean {
+    return this.cfg.spotifyProxyUrl.trim().length > 0;
   }
 
   private shouldRetryWithProxy(status: number, payload: string): boolean {
     return this.transportMode === "direct" && this.canUseProxy() && isSpotifyGeoBlock(status, payload);
+  }
+
+  private async validateConnection(mode: TransportMode): Promise<{ ok: true } | { ok: false; message: string }> {
+    try {
+      const response = await this.requestWithAuthInternal(
+        "https://api.spotify.com/v1/me",
+        { method: "GET" },
+        true,
+        SpotifyClient.RATE_LIMIT_RETRY_ATTEMPTS,
+        mode,
+      );
+      const payload = (await response.json()) as Partial<SpotifyCurrentUserResponse>;
+      if (!payload.id) {
+        return {
+          ok: false,
+          message: t("spotifyConnectionValidationMissingUserId"),
+        };
+      }
+
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   private bumpRateLimitWindow(retryAfterSeconds: number): void {

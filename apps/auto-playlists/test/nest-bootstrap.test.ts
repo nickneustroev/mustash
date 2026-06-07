@@ -7,6 +7,7 @@ import { initLocale } from "../src/i18n/index.js";
 import { AutoPlaylistsSyncService } from "../src/features/playlist-definitions/auto-playlists-sync-service.js";
 import { TrackWatcher } from "../src/runtime/track-watcher.js";
 import { AuthManager } from "../src/spotify/auth-manager.js";
+import { SpotifyClient } from "../src/spotify/spotify-client.js";
 
 describe("Nest bootstrap lifecycle", () => {
   beforeEach(() => {
@@ -22,6 +23,7 @@ describe("Nest bootstrap lifecycle", () => {
     initLocale("EN");
 
     vi.spyOn(AuthManager.prototype, "initialize").mockResolvedValue();
+    vi.spyOn(SpotifyClient.prototype, "initializeTransport").mockResolvedValue();
     vi.spyOn(TrackWatcher.prototype, "start").mockImplementation(() => {});
     vi.spyOn(TrackWatcher.prototype, "stop").mockImplementation(() => {});
     vi.spyOn(AutoPlaylistsSyncService.prototype, "start").mockImplementation(() => {});
@@ -38,6 +40,7 @@ describe("Nest bootstrap lifecycle", () => {
     const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
 
     expect(AuthManager.prototype.initialize).toHaveBeenCalledTimes(1);
+    expect(SpotifyClient.prototype.initializeTransport).toHaveBeenCalledTimes(1);
     expect(PrismaClient.prototype.$queryRawUnsafe).toHaveBeenCalledWith("SELECT 1");
     expect(TrackWatcher.prototype.start).toHaveBeenCalledTimes(1);
     expect(AutoPlaylistsSyncService.prototype.start).toHaveBeenCalledTimes(2);
