@@ -16,6 +16,7 @@ export interface AutoPlaylistsSyncOptions {
   syncIntervalMs: number;
   playlistPrivate: boolean;
   syncModeName: string;
+  syncLogLabel?: string;
   initialDelayMs?: number;
   syncRemovedTracksArchive?: boolean;
   isDatabasePersistenceEnabled?: () => boolean;
@@ -74,7 +75,7 @@ export class AutoPlaylistsSyncService {
     this.logger.info(
       t(
         "syncActive",
-        this.options.syncModeName,
+        this.options.syncLogLabel ?? this.options.syncModeName,
         this.options.definitions.length,
         this.options.syncIntervalMs,
         initialDelayMs,
@@ -107,7 +108,7 @@ export class AutoPlaylistsSyncService {
     try {
       const runExclusive = this.options.runExclusive ?? defaultRunExclusive;
       await runExclusive(this.options.syncModeName, async () => {
-        this.logger.info(t("syncCycleStarted", this.options.syncModeName));
+        this.logger.info(t("syncCycleStarted", this.options.syncLogLabel ?? this.options.syncModeName));
         await this.ensurePlaylists();
         const savedTracks = await this.savedTracksSource.getSavedTracks(this.options.savedTracksRequirements);
 
@@ -155,7 +156,7 @@ export class AutoPlaylistsSyncService {
         this.logger.info(
           t(
             "syncCycleCompleted",
-            this.options.syncModeName,
+            this.options.syncLogLabel ?? this.options.syncModeName,
             syncedPlaylists,
             this.options.definitions.length,
           ),

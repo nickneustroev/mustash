@@ -16,16 +16,18 @@ export const messages = {
 
   trackNotification: (artists: string, trackName: string) => `TRACK ${artists} - ${trackName}`,
 
-  noPlaylistDefinitionsConfigured: "No playlist definitions are configured.",
-  syncActive: (mode: string, definitions: number, interval: number, initialDelay: number) =>
-    `Sync now is active (${mode}, definitions=${definitions}, interval=${interval}ms, initialDelay=${initialDelay}ms).`,
+  savedRecentPlaylistsLabel: "recently saved",
+  savedInYearPlaylistsLabel: "by year",
+  noPlaylistDefinitionsConfigured: "Auto playlists are not configured.",
+  syncActive: (label: string, definitions: number, interval: number, initialDelay: number) =>
+    `Auto playlists are now running for ${label} (playlists=${definitions}, interval=${interval}ms, initialDelay=${initialDelay}ms).`,
   syncStopped: (mode: string) => `Sync stopped (${mode}).`,
-  syncCycleStarted: (mode: string) => `Sync cycle started (${mode}).`,
+  syncCycleStarted: (label: string) => `Started updating playlists for ${label}.`,
   playlistNoLongerAvailable: (name: string) =>
     `Playlist "${name}" is no longer available. Cached id dropped, will recreate on next sync.`,
   syncedPlaylist: (name: string, count: number) => `Synced "${name}" - ${count} items.`,
-  syncCycleCompleted: (mode: string, updated: number, total: number) =>
-    `Sync cycle completed (${mode}, updated=${updated}/${total}).`,
+  syncCycleCompleted: (label: string, updated: number, total: number) =>
+    `Updated playlists for ${label} (updated=${updated}/${total}).`,
   syncRateLimited: (retryAfter: number, nextAttempt: string) =>
     `Sync rate-limited. Retry after ${retryAfter}s. Next attempt after ${nextAttempt}.`,
   syncFailed: (mode: string, message: string) => `Sync failed (${mode}): ${message}`,

@@ -16,16 +16,18 @@ export const messages = {
 
   trackNotification: (artists: string, trackName: string) => `ТРЕК ${artists} - ${trackName}`,
 
-  noPlaylistDefinitionsConfigured: "Нет определений автоматических плейлистов.",
-  syncActive: (mode: string, definitions: number, interval: number, initialDelay: number) =>
-    `Синхронизация активна (${mode}, определений=${definitions}, интервал=${interval}мс, начальная задержка=${initialDelay}мс).`,
+  savedRecentPlaylistsLabel: "недавно сохранённого",
+  savedInYearPlaylistsLabel: "по годам",
+  noPlaylistDefinitionsConfigured: "Автоплейлисты не настроены.",
+  syncActive: (label: string, definitions: number, interval: number, initialDelay: number) =>
+    `Теперь работают автоплейлисты ${label} (плейлистов=${definitions}, интервал=${interval}мс, начальная задержка=${initialDelay}мс).`,
   syncStopped: (mode: string) => `Синхронизация остановлена (${mode}).`,
-  syncCycleStarted: (mode: string) => `Цикл синхронизации начат (${mode}).`,
+  syncCycleStarted: (label: string) => `Начато обновление плейлистов ${label}.`,
   playlistNoLongerAvailable: (name: string) =>
     `Плейлист "${name}" больше недоступен. Кэшированный ID удалён, будет создан заново при следующей синхронизации.`,
   syncedPlaylist: (name: string, count: number) => `Синхронизирован "${name}" - ${count} треков.`,
-  syncCycleCompleted: (mode: string, updated: number, total: number) =>
-    `Цикл синхронизации завершён (${mode}, обновлено=${updated}/${total}).`,
+  syncCycleCompleted: (label: string, updated: number, total: number) =>
+    `Обновлены плейлисты ${label} (обновлено=${updated}/${total}).`,
   syncRateLimited: (retryAfter: number, nextAttempt: string) =>
     `Синхронизация ограничена по частоте. Повтор через ${retryAfter}с. Следующая попытка после ${nextAttempt}.`,
   syncFailed: (mode: string, message: string) => `Синхронизация не удалась (${mode}): ${message}`,

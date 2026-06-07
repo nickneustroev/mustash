@@ -50,6 +50,11 @@ export class AutoPlaylistsOrchestratorService implements OnModuleInit, OnApplica
     } else {
       this.log.info(t("trackMonitoringDisabled"));
     }
+
+    if (!this.autoPlaylistsFrequentSyncService && !this.autoPlaylistsRareSyncService) {
+      this.log.info(t("noPlaylistDefinitionsConfigured"));
+    }
+
     this.autoPlaylistsFrequentSyncService?.start();
     this.autoPlaylistsRareSyncService?.start();
   }

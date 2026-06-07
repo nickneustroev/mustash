@@ -115,8 +115,8 @@ describe("AutoPlaylistsSyncService", () => {
     expect(replacePlaylistItems).toHaveBeenCalledTimes(2);
     expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
     expect(appStateRepository.setValue).toHaveBeenCalledTimes(2);
-    expect(log.info).toHaveBeenCalledWith("Sync cycle started (frequent).");
-    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (frequent, updated=0/2).");
+    expect(log.info).toHaveBeenCalledWith("Started updating playlists for frequent.");
+    expect(log.info).toHaveBeenCalledWith("Updated playlists for frequent (updated=0/2).");
   });
 
   it("archives removed tracks from previous snapshot", async () => {
@@ -292,9 +292,9 @@ describe("AutoPlaylistsSyncService", () => {
     (service as unknown as { stopped: boolean }).stopped = false;
     await service.syncNow();
 
-    expect(log.info).toHaveBeenCalledWith("Sync cycle started (rare).");
+    expect(log.info).toHaveBeenCalledWith("Started updating playlists for rare.");
     expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
-    expect(log.info).toHaveBeenCalledWith("Sync cycle completed (rare, updated=1/1).");
+    expect(log.info).toHaveBeenCalledWith("Updated playlists for rare (updated=1/1).");
   });
 
   it("reuses cached playlist ids from app state without searching by name", async () => {
@@ -485,5 +485,55 @@ describe("AutoPlaylistsSyncService", () => {
     await service.syncNow();
 
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Sync rate-limited. Retry after 30s."));
+  });
+
+  it("logs localized start message with playlist category label", async () => {
+    initLocale("RU");
+
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems: vi.fn().mockResolvedValue(undefined),
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      appStateRepository,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.slice(0, 1).map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 600000,
+        playlistPrivate: true,
+        syncModeName: "frequent",
+        syncLogLabel: "недавно сохранённого",
+      },
+    );
+
+    service.start();
+    await vi.waitFor(() => {
+      expect(log.info).toHaveBeenCalledWith(
+        "Теперь работают автоплейлисты недавно сохранённого (плейлистов=1, интервал=600000мс, начальная задержка=0мс).",
+      );
+      expect(log.info).toHaveBeenCalledWith("Начато обновление плейлистов недавно сохранённого.");
+      expect(log.info).toHaveBeenCalledWith(
+        "Обновлены плейлисты недавно сохранённого (обновлено=1/1).",
+      );
+    });
+    service.stop();
   });
 });
