@@ -1,17 +1,26 @@
 import { config as loadEnv } from "dotenv";
 import { z } from "zod";
 
+const DEFAULT_SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
+const DEFAULT_POLL_INTERVAL_MS = 5000;
+const DEFAULT_AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS = 600000;
+const DEFAULT_AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS = 10800000;
+const DEFAULT_SAVED_RECENT_COVER_COLOR = "000000";
+const DEFAULT_SAVED_IN_YEAR_COVER_COLOR = "060E73";
+const DEFAULT_APP_LOCALE = "EN";
+
 const savedRecentWindowsSchema = z
   .string()
-  .optional()
+  .default("")
   .transform((value) => parseSavedRecentWindows(value));
 
 const savedInYearYearsSchema = z
   .string()
-  .optional()
+  .default("")
   .transform((value) => parseSavedInYearYears(value));
 
-const hexColorSchema = z.string().default("#000000").transform((value) => parseHexColor(value));
+const hexColorSchema = (defaultValue: string) =>
+  z.string().default(defaultValue).transform((value) => parseHexColor(value));
 const playlistSuffixSchema = z
   .string()
   .optional()
@@ -20,21 +29,29 @@ const playlistSuffixSchema = z
 const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
-  SPOTIFY_REDIRECT_URI: z.string().url(),
-  POLL_INTERVAL_MS: z.coerce.number().int().min(500).default(2500),
+  SPOTIFY_REDIRECT_URI: z.string().url().default(DEFAULT_SPOTIFY_REDIRECT_URI),
+  POLL_INTERVAL_MS: z.coerce.number().int().min(500).default(DEFAULT_POLL_INTERVAL_MS),
   SPOTIFY_MIN_REQUEST_GAP_MS: z.coerce.number().int().min(0).default(0),
   TRACK_MONITORING_ENABLED: z
     .string()
     .optional()
     .transform((v) => v !== "false")
     .default(true),
-  DATABASE_URL: z.string().optional().default(""),
-  AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default("SAVED"),
+  DATABASE_URL: z.string().default(""),
+  AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default(""),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
-  AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(600000),
-  AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS: z.coerce.number().int().min(5000).default(10800000),
-  SAVED_RECENT_COVER_COLOR: hexColorSchema,
-  SAVED_IN_YEAR_COVER_COLOR: hexColorSchema,
+  AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: z
+    .coerce.number()
+    .int()
+    .min(5000)
+    .default(DEFAULT_AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS),
+  AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS: z
+    .coerce.number()
+    .int()
+    .min(5000)
+    .default(DEFAULT_AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS),
+  SAVED_RECENT_COVER_COLOR: hexColorSchema(DEFAULT_SAVED_RECENT_COVER_COLOR),
+  SAVED_IN_YEAR_COVER_COLOR: hexColorSchema(DEFAULT_SAVED_IN_YEAR_COVER_COLOR),
   SAVED_RECENT_WINDOWS: savedRecentWindowsSchema,
   SAVED_IN_YEAR_YEARS: savedInYearYearsSchema,
   SPOTIFY_PROXY_ENABLED: z
@@ -43,7 +60,7 @@ const schema = z.object({
     .transform((v) => v === "true")
     .default(false),
   SPOTIFY_PROXY_URL: z.string().default(""),
-  APP_LOCALE: z.enum(["EN", "RU"]).default("EN"),
+  APP_LOCALE: z.enum(["EN", "RU"]).default(DEFAULT_APP_LOCALE),
 });
 
 export interface AppConfig {

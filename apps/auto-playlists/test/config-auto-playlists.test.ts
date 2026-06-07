@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   parseHexColor,
   loadConfig,
@@ -7,7 +7,50 @@ import {
   parseSavedRecentWindows,
 } from "../src/core/config.js";
 
+const ENV_KEYS = [
+  "SPOTIFY_CLIENT_ID",
+  "SPOTIFY_CLIENT_SECRET",
+  "SPOTIFY_REDIRECT_URI",
+  "DATABASE_URL",
+  "POLL_INTERVAL_MS",
+  "SPOTIFY_MIN_REQUEST_GAP_MS",
+  "TRACK_MONITORING_ENABLED",
+  "AUTO_PLAYLISTS_PLAYLIST_PREFIX",
+  "AUTO_PLAYLISTS_PLAYLIST_SUFFIX",
+  "AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS",
+  "AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS",
+  "SAVED_RECENT_COVER_COLOR",
+  "SAVED_IN_YEAR_COVER_COLOR",
+  "SAVED_RECENT_WINDOWS",
+  "SAVED_IN_YEAR_YEARS",
+  "SPOTIFY_PROXY_ENABLED",
+  "SPOTIFY_PROXY_URL",
+  "APP_LOCALE",
+] as const;
+
+const originalEnv = new Map<string, string | undefined>();
+
 describe("auto-playlists config parsers", () => {
+  beforeEach(() => {
+    for (const key of ENV_KEYS) {
+      originalEnv.set(key, process.env[key]);
+      delete process.env[key];
+    }
+  });
+
+  afterEach(() => {
+    for (const key of ENV_KEYS) {
+      const value = originalEnv.get(key);
+      if (value === undefined) {
+        delete process.env[key];
+        continue;
+      }
+
+      process.env[key] = value;
+    }
+    originalEnv.clear();
+  });
+
   it("parses, deduplicates and sorts saved recent windows", () => {
     const parsed = parseSavedRecentWindows("100, 20, 20,50");
     expect(parsed).toEqual([20, 50, 100]);
@@ -56,6 +99,30 @@ describe("auto-playlists config parsers", () => {
 
   it("preserves explicit suffix", () => {
     expect(parsePlaylistSuffix("[SYNC]")).toBe("[SYNC]");
+  });
+
+  it("uses env.example defaults for optional runtime parameters", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+
+    const config = loadConfig();
+
+    expect(config.spotifyRedirectUri).toBe("http://127.0.0.1:3000/callback");
+    expect(config.pollIntervalMs).toBe(5000);
+    expect(config.spotifyMinRequestGapMs).toBe(0);
+    expect(config.trackMonitoringEnabled).toBe(true);
+    expect(config.databaseUrl).toBe("");
+    expect(config.autoPlaylistsPlaylistPrefix).toBe("");
+    expect(config.autoPlaylistsPlaylistSuffix).toBe("[AUTO]");
+    expect(config.autoPlaylistsFrequentSyncIntervalMs).toBe(600000);
+    expect(config.autoPlaylistsRareSyncIntervalMs).toBe(10800000);
+    expect(config.savedRecentCoverColor).toBe("#000000");
+    expect(config.savedInYearCoverColor).toBe("#060E73");
+    expect(config.savedRecentWindows).toEqual([]);
+    expect(config.savedInYearYears).toEqual([]);
+    expect(config.spotifyProxyEnabled).toBe(false);
+    expect(config.spotifyProxyUrl).toBe("");
+    expect(config.appLocale).toBe("EN");
   });
 
   it("uses dedicated full sync interval when it is configured", () => {
