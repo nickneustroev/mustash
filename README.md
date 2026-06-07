@@ -146,16 +146,15 @@ docker-compose logs -f auto-playlists
 
 По умолчанию compose поднимает `auto-playlists` так:
 
-1. callback-сервер внутри контейнера слушает `3000`
-2. наружу публикуется `3000`
-3. `SPOTIFY_REDIRECT_URI` внутри сервиса переопределяется в `http://127.0.0.1:3000/callback`
+1. callback-сервер внутри контейнера слушает порт из `SPOTIFY_LISTEN_PORT` или `3000` по умолчанию
+2. наружу публикуется тот же порт
+3. переменные приложения передаются внутрь контейнера из `.env` через `env_file`
 4. при доступной БД runtime-состояние сохраняется в таблице `AppState` в Postgres
 
-Если нужно изменить значения, используй compose-переменные:
+Если нужно изменить значения для Docker, используй обычные переменные приложения в `.env`:
 
-1. `AUTO_PLAYLISTS_HOST_PORT`
-2. `AUTO_PLAYLISTS_SPOTIFY_REDIRECT_URI`
-3. `AUTO_PLAYLISTS_SPOTIFY_LISTEN_PORT`
+1. `SPOTIFY_REDIRECT_URI`
+2. `SPOTIFY_LISTEN_PORT`
 
 ## Как работают `SAVED` авто-плейлисты (`apps/auto-playlists`)
 

@@ -6,9 +6,6 @@ services:
     container_name: spotify-helper-auto-playlists
     env_file:
       - .env
-    environment:
-      SPOTIFY_REDIRECT_URI: ${AUTO_PLAYLISTS_SPOTIFY_REDIRECT_URI:-http://127.0.0.1:3000/callback}
-      SPOTIFY_LISTEN_PORT: ${AUTO_PLAYLISTS_SPOTIFY_LISTEN_PORT:-3000}
     ports:
-      - "${AUTO_PLAYLISTS_HOST_PORT:-3000}:3000"
+      - "${SPOTIFY_LISTEN_PORT:-3000}:${SPOTIFY_LISTEN_PORT:-3000}"
     restart: unless-stopped
