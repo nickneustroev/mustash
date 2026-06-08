@@ -52,4 +52,22 @@ describe("FileAppStateRepository", () => {
 
     await expect(repository.getValue("key")).resolves.toBeNull();
   });
+
+  it("preserves concurrent writes for different keys", async () => {
+    const filePath = await createTempFilePath();
+    const repository = new FileAppStateRepository(filePath);
+
+    await Promise.all([
+      repository.setValue("auto_playlists:playlist_id:saved-recent:50", "playlist-50"),
+      repository.setValue("auto_playlists:playlist_id:saved-recent:200", "playlist-200"),
+      repository.setValue("spotify_oauth_tokens:auto_playlists", "token-payload"),
+    ]);
+
+    const raw = await readFile(filePath, "utf8");
+    expect(JSON.parse(raw)).toEqual({
+      "auto_playlists:playlist_id:saved-recent:50": "playlist-50",
+      "auto_playlists:playlist_id:saved-recent:200": "playlist-200",
+      "spotify_oauth_tokens:auto_playlists": "token-payload",
+    });
+  });
 });

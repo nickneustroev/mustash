@@ -5,26 +5,50 @@ import type { AppStateRepository, ArchiveRepository, ArchivedTrackItem, HistoryE
 type AppStateFilePayload = Record<string, string>;
 
 export class FileAppStateRepository implements AppStateRepository {
+  private operationQueue: Promise<void> = Promise.resolve();
+
   constructor(private readonly filePath = resolve("temp", "app-state.json")) {}
 
   public async getValue(key: string): Promise<string | null> {
-    const values = await this.readValues();
-    return values[key] ?? null;
+    return this.runExclusive(async () => {
+      const values = await this.readValues();
+      return values[key] ?? null;
+    });
   }
 
   public async setValue(key: string, value: string): Promise<void> {
-    const values = await this.readValues();
-    values[key] = value;
-    await this.writeValues(values);
+    await this.runExclusive(async () => {
+      const values = await this.readValues();
+      values[key] = value;
+      await this.writeValues(values);
+    });
   }
 
   public async deleteValue(key: string): Promise<void> {
-    const values = await this.readValues();
-    delete values[key];
-    await this.writeValues(values);
+    await this.runExclusive(async () => {
+      const values = await this.readValues();
+      delete values[key];
+      await this.writeValues(values);
+    });
   }
 
   public async close(): Promise<void> {}
+
+  private async runExclusive<T>(operation: () => Promise<T>): Promise<T> {
+    const previous = this.operationQueue;
+    let release!: () => void;
+    this.operationQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    await previous.catch(() => undefined);
+
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  }
 
   private async readValues(): Promise<AppStateFilePayload> {
     try {
