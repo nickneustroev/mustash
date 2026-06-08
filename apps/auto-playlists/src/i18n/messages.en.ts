@@ -25,7 +25,8 @@ export const messages = {
   syncCycleStarted: (label: string) => `Started updating playlists for ${label}.`,
   playlistNoLongerAvailable: (name: string) =>
     `Playlist "${name}" is no longer available. Cached id dropped, will recreate on next sync.`,
-  syncedPlaylist: (name: string, count: number) => `Synced "${name}" - ${count} items.`,
+  playlistUpdated: (name: string) => `Playlist "${name}" was updated.`,
+  playlistDoesNotRequireUpdate: (name: string) => `Playlist "${name}" does not require an update.`,
   syncCycleCompleted: (label: string, updated: number, total: number) =>
     `Updated playlists for ${label} (updated=${updated}/${total}).`,
   syncRateLimited: (retryAfter: number, nextAttempt: string) =>

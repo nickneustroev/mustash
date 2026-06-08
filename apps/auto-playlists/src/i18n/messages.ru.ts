@@ -25,7 +25,8 @@ export const messages = {
   syncCycleStarted: (label: string) => `Начато обновление плейлистов ${label}.`,
   playlistNoLongerAvailable: (name: string) =>
     `Плейлист "${name}" больше недоступен. Кэшированный ID удалён, будет создан заново при следующей синхронизации.`,
-  syncedPlaylist: (name: string, count: number) => `Синхронизирован "${name}" - ${count} треков.`,
+  playlistUpdated: (name: string) => `Плейлист "${name}" был обновлен.`,
+  playlistDoesNotRequireUpdate: (name: string) => `Плейлист "${name}" не требует обновления.`,
   syncCycleCompleted: (label: string, updated: number, total: number) =>
     `Обновлены плейлисты ${label} (обновлено=${updated}/${total}).`,
   syncRateLimited: (retryAfter: number, nextAttempt: string) =>

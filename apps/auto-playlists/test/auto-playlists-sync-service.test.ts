@@ -116,6 +116,8 @@ describe("AutoPlaylistsSyncService", () => {
     expect(uploadPlaylistCoverImage).toHaveBeenCalledTimes(2);
     expect(appStateRepository.setValue).toHaveBeenCalledTimes(2);
     expect(log.info).toHaveBeenCalledWith("Started updating playlists for frequent.");
+    expect(log.info).toHaveBeenCalledWith('Playlist "SAVED RECENT 2 [AUTO]" does not require an update.');
+    expect(log.info).toHaveBeenCalledWith('Playlist "SAVED RECENT 3 [AUTO]" does not require an update.');
     expect(log.info).toHaveBeenCalledWith("Updated playlists for frequent (updated=0/2).");
   });
 
@@ -293,7 +295,7 @@ describe("AutoPlaylistsSyncService", () => {
     await service.syncNow();
 
     expect(log.info).toHaveBeenCalledWith("Started updating playlists for rare.");
-    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+    expect(log.info).toHaveBeenCalledWith('Playlist "SAVED RECENT 2 [AUTO]" was updated.');
     expect(log.info).toHaveBeenCalledWith("Updated playlists for rare (updated=1/1).");
   });
 
@@ -406,7 +408,7 @@ describe("AutoPlaylistsSyncService", () => {
     expect(findPlaylistByName).toHaveBeenCalledWith("SAVED RECENT 2 [AUTO]");
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "missing-playlist-id", ["spotify:track:a"]);
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "recovered-playlist-id", ["spotify:track:a"]);
-    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+    expect(log.info).toHaveBeenCalledWith('Playlist "SAVED RECENT 2 [AUTO]" was updated.');
   });
 
   it("creates a replacement playlist in the same sync cycle after cached playlist id fails", async () => {
@@ -472,7 +474,7 @@ describe("AutoPlaylistsSyncService", () => {
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "missing-playlist-id", ["spotify:track:a"]);
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "created-playlist-id", ["spotify:track:a"]);
     expect(log.info).toHaveBeenCalledWith('Created "SAVED RECENT 2 [AUTO]".');
-    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+    expect(log.info).toHaveBeenCalledWith('Playlist "SAVED RECENT 2 [AUTO]" was updated.');
   });
 
   it("creates a new playlist when lookup by name returns the same forbidden id", async () => {
@@ -537,7 +539,7 @@ describe("AutoPlaylistsSyncService", () => {
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "forbidden-playlist-id", ["spotify:track:a"]);
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "replacement-playlist-id", ["spotify:track:a"]);
     expect(log.info).toHaveBeenCalledWith('Created "SAVED RECENT 2 [AUTO]".');
-    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+    expect(log.info).toHaveBeenCalledWith('Playlist "SAVED RECENT 2 [AUTO]" was updated.');
   });
 
   it("retries in the same cycle on new-format 404 Spotify API errors", async () => {

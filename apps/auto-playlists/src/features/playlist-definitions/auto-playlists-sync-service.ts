@@ -130,6 +130,7 @@ export class AutoPlaylistsSyncService {
           const trackUris = definition.resolveTrackUris(savedTracks);
           const hash = hashTrackUris(trackUris);
           if (this.lastHashesByDefinitionKey.get(definition.key) === hash) {
+            this.logger.info(t("playlistDoesNotRequireUpdate", definition.playlistName));
             continue;
           }
 
@@ -165,7 +166,7 @@ export class AutoPlaylistsSyncService {
 
           this.lastHashesByDefinitionKey.set(definition.key, hash);
           syncedPlaylists += 1;
-          this.logger.info(t("syncedPlaylist", definition.playlistName, trackUris.length));
+          this.logger.info(t("playlistUpdated", definition.playlistName));
         }
 
         this.logger.info(
