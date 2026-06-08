@@ -1,6 +1,6 @@
 import type { Logger } from "../shared/types.js";
 
-const ts = () => new Date().toISOString();
+const ts = () => new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
 export const logger: Logger = {
   info(message) {
