@@ -471,7 +471,7 @@ describe("AutoPlaylistsSyncService", () => {
     expect(uploadPlaylistCoverImage).toHaveBeenCalledWith("created-playlist-id", Buffer.from("cover-2").toString("base64"));
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "missing-playlist-id", ["spotify:track:a"]);
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "created-playlist-id", ["spotify:track:a"]);
-    expect(log.info).toHaveBeenCalledWith('Created (SAVED RECENT 2 [AUTO]).');
+    expect(log.info).toHaveBeenCalledWith('Created "SAVED RECENT 2 [AUTO]".');
     expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
   });
 
@@ -536,7 +536,7 @@ describe("AutoPlaylistsSyncService", () => {
     );
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "forbidden-playlist-id", ["spotify:track:a"]);
     expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "replacement-playlist-id", ["spotify:track:a"]);
-    expect(log.info).toHaveBeenCalledWith('Created (SAVED RECENT 2 [AUTO]).');
+    expect(log.info).toHaveBeenCalledWith('Created "SAVED RECENT 2 [AUTO]".');
     expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
   });
 

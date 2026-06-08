@@ -31,8 +31,8 @@ export const messages = {
   syncRateLimited: (retryAfter: number, nextAttempt: string) =>
     `Синхронизация ограничена по частоте. Повтор через ${retryAfter}с. Следующая попытка после ${nextAttempt}.`,
   syncFailed: (mode: string, message: string) => `Синхронизация не удалась (${mode}): ${message}`,
-  playlistCreated: (name: string) => `Создан (${name}).`,
-  coverUploaded: (name: string) => `Обложка загружена (${name}).`,
+  playlistCreated: (name: string) => `Создан "${name}".`,
+  coverUploaded: (name: string) => `Обложка загружена для "${name}".`,
   coverUploadFailed: (name: string, message: string) =>
     `Не удалось загрузить обложку для плейлиста ${name}: ${message}`,
   archivedRemovedTrack: (artist: string, track: string, trackId: string) =>

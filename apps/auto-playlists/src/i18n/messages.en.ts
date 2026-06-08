@@ -31,8 +31,8 @@ export const messages = {
   syncRateLimited: (retryAfter: number, nextAttempt: string) =>
     `Sync rate-limited. Retry after ${retryAfter}s. Next attempt after ${nextAttempt}.`,
   syncFailed: (mode: string, message: string) => `Sync failed (${mode}): ${message}`,
-  playlistCreated: (name: string) => `Created (${name}).`,
-  coverUploaded: (name: string) => `Cover uploaded (${name}).`,
+  playlistCreated: (name: string) => `Created "${name}".`,
+  coverUploaded: (name: string) => `Cover uploaded "${name}".`,
   coverUploadFailed: (name: string, message: string) =>
     `Failed to upload cover for playlist ${name}: ${message}`,
   archivedRemovedTrack: (artist: string, track: string, trackId: string) =>
