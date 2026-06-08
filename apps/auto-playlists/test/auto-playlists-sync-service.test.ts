@@ -720,7 +720,7 @@ describe("AutoPlaylistsSyncService", () => {
     service.start();
     await vi.waitFor(() => {
       expect(log.info).toHaveBeenCalledWith(
-        "Теперь работают автоплейлисты недавно сохранённого (плейлистов=1, интервал=600000мс, начальная задержка=0мс).",
+        "Будут обновляться автоплейлисты недавно сохранённого (плейлистов=1, интервал=600000мс, начальная задержка=0мс).",
       );
       expect(log.info).toHaveBeenCalledWith("Начато обновление плейлистов недавно сохранённого.");
       expect(log.info).toHaveBeenCalledWith(

@@ -20,7 +20,7 @@ export const messages = {
   savedInYearPlaylistsLabel: "по годам",
   noPlaylistDefinitionsConfigured: "Автоплейлисты не настроены.",
   syncActive: (label: string, definitions: number, interval: number, initialDelay: number) =>
-    `Теперь работают автоплейлисты ${label} (плейлистов=${definitions}, интервал=${interval}мс, начальная задержка=${initialDelay}мс).`,
+    `Будут обновляться автоплейлисты ${label} (плейлистов=${definitions}, интервал=${interval}мс, начальная задержка=${initialDelay}мс).`,
   syncStopped: (mode: string) => `Синхронизация остановлена (${mode}).`,
   syncCycleStarted: (label: string) => `Начато обновление плейлистов ${label}.`,
   playlistNoLongerAvailable: (name: string) =>
