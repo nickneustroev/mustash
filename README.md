@@ -43,7 +43,12 @@
 1. системные env-переменные
 2. `.env`
 
-Скопируй `.env.example` в `.env`:
+Можно использовать один из двух шаблонов:
+
+1. `.env.full.example` - полный
+2. `.env.minimal.example` - минимальный
+
+Скопируй выбранный шаблон в `.env`:
 
 ```env
 SPOTIFY_CLIENT_ID=your_client_id
