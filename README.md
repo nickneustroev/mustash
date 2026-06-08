@@ -27,12 +27,10 @@
 При первом OAuth-логине приложение может запросить scopes из обоих сценариев:
 
 1. `user-read-currently-playing`
-2. `user-read-playback-state`
-3. `user-read-recently-played`
-4. `user-library-read`
-5. `ugc-image-upload`
-6. `playlist-modify-private`
-7. `playlist-read-private`
+2. `user-library-read`
+3. `ugc-image-upload`
+4. `playlist-modify-private`
+5. `playlist-read-private`
 
 ## Переменные окружения
 

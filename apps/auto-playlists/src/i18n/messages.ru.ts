@@ -56,6 +56,8 @@ export const messages = {
   spotifyTokenParseFailed: (key: string, message: string) =>
     `Не удалось разобрать данные токена Spotify из ключа AppState "${key}": ${message}`,
   spotifyTokensSaved: (key: string) => `Токены Spotify сохранены в ключ AppState "${key}".`,
+  spotifyTokensResetDueToConfigChange: (key: string) =>
+    `Токены Spotify в ключе AppState "${key}" сброшены из-за изменения настроек Spotify app.`,
 
   noStoredSpotifyTokens: "Сохранённые токены Spotify не найдены, запуск авторизации.",
   accessTokenNearExpiration: "Access token истекает скоро, обновление.",

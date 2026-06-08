@@ -17,6 +17,12 @@ export interface OAuthTokens {
   expiresAtEpochMs: number;
 }
 
+export interface SpotifyTokenBinding {
+  spotifyClientId: string;
+  spotifyRedirectUri: string;
+  oauthScopes: string[];
+}
+
 export interface OAuthTokenStore {
   loadTokens(): Promise<OAuthTokens | null>;
   saveTokens(tokens: OAuthTokens): Promise<void>;

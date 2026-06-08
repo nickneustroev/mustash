@@ -91,6 +91,54 @@ describe("auto-playlists config parsers", () => {
     expect(() => parseHexColor("#12345")).toThrow();
   });
 
+  it("uses default cover colors when env values are empty", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+    process.env.SAVED_RECENT_COVER_COLOR = "";
+    process.env.SAVED_IN_YEAR_COVER_COLOR = "   ";
+
+    const config = loadConfig();
+
+    expect(config.savedRecentCoverColor).toBe("#000000");
+    expect(config.savedInYearCoverColor).toBe("#060E73");
+  });
+
+  it("uses defaults for all supported empty env values", () => {
+    process.env.SPOTIFY_CLIENT_ID = "test-client-id";
+    process.env.SPOTIFY_CLIENT_SECRET = "test-client-secret";
+    process.env.SPOTIFY_REDIRECT_URI = " ";
+    process.env.POLL_INTERVAL_MS = "";
+    process.env.SPOTIFY_MIN_REQUEST_GAP_MS = "   ";
+    process.env.TRACK_MONITORING_ENABLED = "";
+    process.env.DATABASE_URL = " ";
+    process.env.AUTO_PLAYLISTS_PLAYLIST_PREFIX = " ";
+    process.env.AUTO_PLAYLISTS_PLAYLIST_SUFFIX = "";
+    process.env.AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS = "";
+    process.env.AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS = " ";
+    process.env.SAVED_RECENT_COVER_COLOR = "";
+    process.env.SAVED_IN_YEAR_COVER_COLOR = " ";
+    process.env.SPOTIFY_PROXY_ENABLED = "";
+    process.env.SPOTIFY_PROXY_URL = " ";
+    process.env.APP_LOCALE = "";
+
+    const config = loadConfig();
+
+    expect(config.spotifyRedirectUri).toBe("http://127.0.0.1:3000/callback");
+    expect(config.pollIntervalMs).toBe(5000);
+    expect(config.spotifyMinRequestGapMs).toBe(0);
+    expect(config.trackMonitoringEnabled).toBe(true);
+    expect(config.databaseUrl).toBe("");
+    expect(config.autoPlaylistsPlaylistPrefix).toBe("");
+    expect(config.autoPlaylistsPlaylistSuffix).toBe("[AUTO]");
+    expect(config.autoPlaylistsFrequentSyncIntervalMs).toBe(600000);
+    expect(config.autoPlaylistsRareSyncIntervalMs).toBe(10800000);
+    expect(config.savedRecentCoverColor).toBe("#000000");
+    expect(config.savedInYearCoverColor).toBe("#060E73");
+    expect(config.spotifyProxyEnabled).toBe(false);
+    expect(config.spotifyProxyUrl).toBe("");
+    expect(config.appLocale).toBe("EN");
+  });
+
   it("uses default suffix when suffix is missing or empty", () => {
     expect(parsePlaylistSuffix(undefined)).toBe("[AUTO]");
     expect(parsePlaylistSuffix("")).toBe("[AUTO]");

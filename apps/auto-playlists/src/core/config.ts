@@ -19,48 +19,45 @@ const savedInYearYearsSchema = z
   .default("")
   .transform((value) => parseSavedInYearYears(value));
 
+const optionalEnv = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) => (typeof value === "string" && value.trim().length === 0 ? undefined : value),
+    schema.optional(),
+  );
+
 const hexColorSchema = (defaultValue: string) =>
-  z.string().default(defaultValue).transform((value) => parseHexColor(value));
-const playlistSuffixSchema = z
-  .string()
-  .optional()
-  .transform((value) => parsePlaylistSuffix(value));
+  optionalEnv(z.string()).transform((value) => parseOptionalHexColor(value, defaultValue));
+const playlistSuffixSchema = optionalEnv(z.string()).transform((value) => parsePlaylistSuffix(value));
 
 const schema = z.object({
   SPOTIFY_CLIENT_ID: z.string().min(1),
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
-  SPOTIFY_REDIRECT_URI: z.string().url().default(DEFAULT_SPOTIFY_REDIRECT_URI),
-  POLL_INTERVAL_MS: z.coerce.number().int().min(500).default(DEFAULT_POLL_INTERVAL_MS),
-  SPOTIFY_MIN_REQUEST_GAP_MS: z.coerce.number().int().min(0).default(0),
-  TRACK_MONITORING_ENABLED: z
-    .string()
-    .optional()
+  SPOTIFY_REDIRECT_URI: optionalEnv(z.string().url()).default(DEFAULT_SPOTIFY_REDIRECT_URI),
+  POLL_INTERVAL_MS: optionalEnv(z.coerce.number().int().min(500)).default(DEFAULT_POLL_INTERVAL_MS),
+  SPOTIFY_MIN_REQUEST_GAP_MS: optionalEnv(z.coerce.number().int().min(0)).default(0),
+  TRACK_MONITORING_ENABLED: optionalEnv(z.string())
     .transform((v) => v !== "false")
     .default(true),
-  DATABASE_URL: z.string().default(""),
-  AUTO_PLAYLISTS_PLAYLIST_PREFIX: z.string().default(""),
+  DATABASE_URL: optionalEnv(z.string()).default(""),
+  AUTO_PLAYLISTS_PLAYLIST_PREFIX: optionalEnv(z.string()).default(""),
   AUTO_PLAYLISTS_PLAYLIST_SUFFIX: playlistSuffixSchema,
-  AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: z
-    .coerce.number()
-    .int()
-    .min(5000)
+  AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS: optionalEnv(
+    z.coerce.number().int().min(5000),
+  )
     .default(DEFAULT_AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS),
-  AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS: z
-    .coerce.number()
-    .int()
-    .min(5000)
+  AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS: optionalEnv(
+    z.coerce.number().int().min(5000),
+  )
     .default(DEFAULT_AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS),
   SAVED_RECENT_COVER_COLOR: hexColorSchema(DEFAULT_SAVED_RECENT_COVER_COLOR),
   SAVED_IN_YEAR_COVER_COLOR: hexColorSchema(DEFAULT_SAVED_IN_YEAR_COVER_COLOR),
   SAVED_RECENT_WINDOWS: savedRecentWindowsSchema,
   SAVED_IN_YEAR_YEARS: savedInYearYearsSchema,
-  SPOTIFY_PROXY_ENABLED: z
-    .string()
-    .optional()
+  SPOTIFY_PROXY_ENABLED: optionalEnv(z.string())
     .transform((v) => v === "true")
     .default(false),
-  SPOTIFY_PROXY_URL: z.string().default(""),
-  APP_LOCALE: z.enum(["EN", "RU"]).default(DEFAULT_APP_LOCALE),
+  SPOTIFY_PROXY_URL: optionalEnv(z.string()).default(""),
+  APP_LOCALE: optionalEnv(z.enum(["EN", "RU"])).default(DEFAULT_APP_LOCALE),
 });
 
 export interface AppConfig {
@@ -238,6 +235,14 @@ export function parseHexColor(value: string): string {
   }
 
   return `#${raw}`;
+}
+
+function parseOptionalHexColor(value: string | undefined, defaultValue: string): string {
+  if (value === undefined || value.trim().length === 0) {
+    return parseHexColor(defaultValue);
+  }
+
+  return parseHexColor(value);
 }
 
 export function parsePlaylistSuffix(value: string | undefined): string {

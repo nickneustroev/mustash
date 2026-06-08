@@ -55,6 +55,8 @@ export const messages = {
   spotifyTokenParseFailed: (key: string, message: string) =>
     `Unable to parse Spotify token payload from AppState key "${key}": ${message}`,
   spotifyTokensSaved: (key: string) => `Spotify tokens saved to AppState key "${key}".`,
+  spotifyTokensResetDueToConfigChange: (key: string) =>
+    `Spotify tokens in AppState key "${key}" were reset because the Spotify app configuration changed.`,
 
   noStoredSpotifyTokens: "No stored Spotify tokens found, starting login.",
   accessTokenNearExpiration: "Access token is near expiration, refreshing.",

@@ -9,6 +9,14 @@ import type { Logger, SpotifyAuthConfig, SpotifyClientConfig } from "../shared/t
 import { AppStateOAuthTokenStore } from "./app-state-oauth-token-store.js";
 import { SpotifyClient } from "./spotify-client.js";
 
+const AUTO_PLAYLISTS_OAUTH_SCOPES = [
+  "user-read-currently-playing",
+  "user-library-read",
+  "ugc-image-upload",
+  "playlist-modify-private",
+  "playlist-read-private",
+] as const;
+
 @Module({
   imports: [CoreModule, PersistenceModule],
   providers: [
@@ -27,14 +35,17 @@ import { SpotifyClient } from "./spotify-client.js";
             spotifyClientSecret: cfg.spotifyClientSecret,
             spotifyRedirectUri: cfg.spotifyRedirectUri,
             requestTimeoutMs: cfg.requestTimeoutMs,
-            oauthScopes: [
-              "user-library-read",
-              "ugc-image-upload",
-              "playlist-modify-private",
-              "playlist-read-private",
-            ],
+            oauthScopes: [...AUTO_PLAYLISTS_OAUTH_SCOPES],
           } satisfies SpotifyAuthConfig,
-          new AppStateOAuthTokenStore(appStateRepository, log),
+          new AppStateOAuthTokenStore(
+            appStateRepository,
+            log,
+            {
+              spotifyClientId: cfg.spotifyClientId,
+              spotifyRedirectUri: cfg.spotifyRedirectUri,
+              oauthScopes: [...AUTO_PLAYLISTS_OAUTH_SCOPES],
+            },
+          ),
           log,
           fetchImpl,
         ),
