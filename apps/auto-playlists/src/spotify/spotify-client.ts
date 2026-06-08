@@ -328,7 +328,13 @@ export class SpotifyClient {
     const headers = new Headers(init.headers ?? {});
     headers.set("Authorization", `Bearer ${accessToken}`);
 
-    const response = await this.fetchWithTransport(url, init, headers, modeOverride ?? this.transportMode);
+    const requestDescription = describeRequest(init.method, url);
+    let response: Response;
+    try {
+      response = await this.fetchWithTransport(url, init, headers, modeOverride ?? this.transportMode);
+    } catch (error) {
+      throw new Error(buildSpotifyTransportErrorMessage(requestDescription, error, this.cfg.requestTimeoutMs));
+    }
 
     if (response.status === 401 && allowRetryOnUnauthorized) {
       this.log.warn(t("spotifyApi401"));
@@ -376,7 +382,7 @@ export class SpotifyClient {
         this.log.warn(t("spotifyGeoBlockNoProxy"));
       }
 
-      throw new Error(`Spotify request failed (${response.status}): ${payload}`);
+      throw new Error(buildSpotifyApiErrorMessage(requestDescription, response.status, payload));
     }
 
     return response;
@@ -567,4 +573,31 @@ function describeRequest(method: string | undefined, url: string): string {
   } catch {
     return `${normalizedMethod} ${url}`;
   }
+}
+
+function buildSpotifyApiErrorMessage(
+  requestDescription: string,
+  status: number,
+  payload: string,
+): string {
+  return `Spotify API error during ${requestDescription} (${status}): ${payload}`;
+}
+
+function buildSpotifyTransportErrorMessage(
+  requestDescription: string,
+  error: unknown,
+  requestTimeoutMs: number,
+): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const lowerMessage = message.toLowerCase();
+  const timeoutLike =
+    lowerMessage.includes("aborted due to timeout") ||
+    lowerMessage.includes("timeout") ||
+    lowerMessage.includes("timed out");
+
+  if (timeoutLike) {
+    return `Spotify request ${requestDescription} timed out after ${requestTimeoutMs}ms.`;
+  }
+
+  return `Spotify request ${requestDescription} failed before response: ${message}`;
 }
