@@ -173,4 +173,53 @@ describe("SpotifyClient rate limiting", () => {
     );
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
+
+  it("creates playlists through POST /v1/me/playlists", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ id: "playlist-1", name: "Test" }), {
+        status: 201,
+        headers: {
+          "content-type": "application/json",
+        },
+      }),
+    );
+
+    const client = createClient(fetchImpl);
+    await expect(client.createPlaylist("Test", "Description", true)).resolves.toEqual({
+      id: "playlist-1",
+      name: "Test",
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.spotify.com/v1/me/playlists",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
+  it("replaces playlist items through /items endpoints", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response("{}", {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+          },
+        }),
+      );
+
+    const client = createClient(fetchImpl);
+    await expect(
+      client.replacePlaylistItems("playlist-1", ["spotify:track:a", "spotify:track:b"]),
+    ).resolves.toBeUndefined();
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.spotify.com/v1/playlists/playlist-1/items",
+      expect.objectContaining({
+        method: "PUT",
+      }),
+    );
+  });
 });

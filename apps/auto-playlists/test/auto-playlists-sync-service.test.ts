@@ -351,11 +351,15 @@ describe("AutoPlaylistsSyncService", () => {
     ).toHaveBeenCalledWith("cached-playlist-id", ["spotify:track:a"]);
   });
 
-  it("drops cached playlist id when Spotify reports missing playlist", async () => {
-    const replacePlaylistItems = vi.fn().mockRejectedValue(new Error("Spotify request failed (404): not found"));
+  it("reuses an existing playlist by name in the same sync cycle after cached playlist id fails", async () => {
+    const replacePlaylistItems = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Spotify request failed (404): not found"))
+      .mockResolvedValueOnce(undefined);
+    const findPlaylistByName = vi.fn().mockResolvedValue({ id: "recovered-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
-      findPlaylistByName: vi.fn(),
+      findPlaylistByName,
       createPlaylist: vi.fn(),
       replacePlaylistItems,
       uploadPlaylistCoverImage: vi.fn(),
@@ -371,6 +375,7 @@ describe("AutoPlaylistsSyncService", () => {
         .fn()
         .mockResolvedValueOnce("missing-playlist-id")
         .mockResolvedValueOnce(null),
+      setValue: vi.fn().mockResolvedValue(undefined),
       deleteValue: vi.fn().mockResolvedValue(undefined),
     };
 
@@ -398,10 +403,196 @@ describe("AutoPlaylistsSyncService", () => {
     (service as unknown as { stopped: boolean }).stopped = false;
     await service.syncNow();
 
-    expect(localAppState.deleteValue).toHaveBeenCalledWith("auto_playlists:playlist_id:saved-recent:2");
-    expect(log.warn).toHaveBeenCalledWith(
-      'Playlist "SAVED RECENT 2 [AUTO]" is no longer available. Cached id dropped, will recreate on next sync.',
+    expect(findPlaylistByName).toHaveBeenCalledWith("SAVED RECENT 2 [AUTO]");
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "missing-playlist-id", ["spotify:track:a"]);
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "recovered-playlist-id", ["spotify:track:a"]);
+    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+  });
+
+  it("creates a replacement playlist in the same sync cycle after cached playlist id fails", async () => {
+    const replacePlaylistItems = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Spotify request failed (404): not found"))
+      .mockResolvedValueOnce(undefined);
+    const createPlaylist = vi.fn().mockResolvedValue({ id: "created-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
+    const uploadPlaylistCoverImage = vi.fn().mockResolvedValue(undefined);
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue(null),
+      createPlaylist,
+      replacePlaylistItems,
+      uploadPlaylistCoverImage,
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const localAppState: AppStateRepository = {
+      ...appStateRepository,
+      getValue: vi
+        .fn()
+        .mockResolvedValueOnce("missing-playlist-id")
+        .mockResolvedValueOnce(null),
+      setValue: vi.fn().mockResolvedValue(undefined),
+      deleteValue: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      localAppState,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.map((track) => track.trackUri),
+            buildCoverJpeg: async () => Buffer.from("cover-2"),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "frequent",
+      },
     );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(createPlaylist).toHaveBeenCalledWith(
+      "SAVED RECENT 2 [AUTO]",
+      "Auto-maintained recent saved tracks (2).",
+      true,
+    );
+    expect(uploadPlaylistCoverImage).toHaveBeenCalledWith("created-playlist-id", Buffer.from("cover-2").toString("base64"));
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "missing-playlist-id", ["spotify:track:a"]);
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "created-playlist-id", ["spotify:track:a"]);
+    expect(log.info).toHaveBeenCalledWith('Created (SAVED RECENT 2 [AUTO]).');
+    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+  });
+
+  it("creates a new playlist when lookup by name returns the same forbidden id", async () => {
+    const replacePlaylistItems = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Spotify API error during PUT /v1/playlists/forbidden-playlist-id/items (403): {"error":{"status":403,"message":"Forbidden"}}'))
+      .mockResolvedValueOnce(undefined);
+    const findPlaylistByName = vi.fn().mockResolvedValue({ id: "forbidden-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
+    const createPlaylist = vi.fn().mockResolvedValue({ id: "replacement-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName,
+      createPlaylist,
+      replacePlaylistItems,
+      uploadPlaylistCoverImage: vi.fn().mockResolvedValue(undefined),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const localAppState: AppStateRepository = {
+      ...appStateRepository,
+      getValue: vi
+        .fn()
+        .mockResolvedValueOnce("forbidden-playlist-id")
+        .mockResolvedValueOnce(null),
+      setValue: vi.fn().mockResolvedValue(undefined),
+      deleteValue: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      localAppState,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "frequent",
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(findPlaylistByName).toHaveBeenCalledWith("SAVED RECENT 2 [AUTO]");
+    expect(createPlaylist).toHaveBeenCalledWith(
+      "SAVED RECENT 2 [AUTO]",
+      "Auto-maintained recent saved tracks (2).",
+      true,
+    );
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "forbidden-playlist-id", ["spotify:track:a"]);
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "replacement-playlist-id", ["spotify:track:a"]);
+    expect(log.info).toHaveBeenCalledWith('Created (SAVED RECENT 2 [AUTO]).');
+    expect(log.info).toHaveBeenCalledWith('Synced "SAVED RECENT 2 [AUTO]" - 1 items.');
+  });
+
+  it("retries in the same cycle on new-format 404 Spotify API errors", async () => {
+    const replacePlaylistItems = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Spotify API error during PUT /v1/playlists/missing-playlist-id/items (404): {"error":{"status":404,"message":"Not found"}}'))
+      .mockResolvedValueOnce(undefined);
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      findPlaylistByName: vi.fn().mockResolvedValue({ id: "recovered-playlist-id", name: "SAVED RECENT 2 [AUTO]" }),
+      createPlaylist: vi.fn(),
+      replacePlaylistItems,
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const localAppState: AppStateRepository = {
+      ...appStateRepository,
+      getValue: vi
+        .fn()
+        .mockResolvedValueOnce("missing-playlist-id")
+        .mockResolvedValueOnce(null),
+      setValue: vi.fn().mockResolvedValue(undefined),
+      deleteValue: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      localAppState,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "frequent",
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(1, "missing-playlist-id", ["spotify:track:a"]);
+    expect(replacePlaylistItems).toHaveBeenNthCalledWith(2, "recovered-playlist-id", ["spotify:track:a"]);
   });
 
   it("uses saved track requirements instead of forcing full catalog fetch", async () => {
@@ -449,8 +640,8 @@ describe("AutoPlaylistsSyncService", () => {
 
   it("backs off when Spotify rate limits the current sync mode", async () => {
     const spotifyClient = {
-      getCurrentUserId: vi.fn().mockRejectedValue(new SpotifyRateLimitError(30)),
-      findPlaylistByName: vi.fn(),
+      getCurrentUserId: vi.fn(),
+      findPlaylistByName: vi.fn().mockRejectedValue(new SpotifyRateLimitError(30)),
       createPlaylist: vi.fn(),
       replacePlaylistItems: vi.fn(),
       uploadPlaylistCoverImage: vi.fn(),

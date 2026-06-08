@@ -122,7 +122,7 @@ export class AutoPlaylistsSyncService {
         let syncedPlaylists = 0;
 
         for (const definition of this.options.definitions) {
-          const playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
+          let playlistId = this.playlistIdsByDefinitionKey.get(definition.key);
           if (!playlistId) {
             continue;
           }
@@ -133,19 +133,34 @@ export class AutoPlaylistsSyncService {
             continue;
           }
 
-          try {
-            await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
-          } catch (error) {
-            if (isMissingPlaylistError(error)) {
+          let synced = false;
+          for (let attempt = 0; attempt < 2; attempt += 1) {
+            try {
+              await this.spotifyClient.replacePlaylistItems(playlistId, trackUris);
+              synced = true;
+              break;
+            } catch (error) {
+              if (!isMissingPlaylistError(error)) {
+                throw error;
+              }
+
               await this.forgetPlaylistId(definition.key);
               this.lastHashesByDefinitionKey.delete(definition.key);
-              this.logger.warn(
-                t("playlistNoLongerAvailable", definition.playlistName),
-              );
-              continue;
-            }
 
-            throw error;
+              const recoveredPlaylistId = await this.recoverOrCreatePlaylist(definition, playlistId);
+              if (!recoveredPlaylistId) {
+                this.logger.warn(
+                  t("playlistNoLongerAvailable", definition.playlistName),
+                );
+                break;
+              }
+
+              playlistId = recoveredPlaylistId;
+            }
+          }
+
+          if (!synced) {
+            continue;
           }
 
           this.lastHashesByDefinitionKey.set(definition.key, hash);
@@ -181,8 +196,6 @@ export class AutoPlaylistsSyncService {
   }
 
   private async ensurePlaylists(): Promise<void> {
-    const userId = await this.spotifyClient.getCurrentUserId();
-
     for (const definition of this.options.definitions) {
       if (this.playlistIdsByDefinitionKey.has(definition.key)) {
         continue;
@@ -201,7 +214,6 @@ export class AutoPlaylistsSyncService {
       }
 
       const created = await this.spotifyClient.createPlaylist(
-        userId,
         definition.playlistName,
         definition.playlistDescription,
         this.options.playlistPrivate,
@@ -310,6 +322,39 @@ export class AutoPlaylistsSyncService {
     await this.appStateRepository.setValue(buildPlaylistIdStateKey(definitionKey), playlistId);
   }
 
+  private async recoverOrCreatePlaylist(
+    definition: AutoPlaylistDefinition,
+    unavailablePlaylistId: string,
+  ): Promise<string | null> {
+    const existing = await this.spotifyClient.findPlaylistByName(definition.playlistName);
+    if (existing && existing.id !== unavailablePlaylistId) {
+      await this.rememberPlaylistId(definition.key, existing.id);
+      return existing.id;
+    }
+
+    const created = await this.spotifyClient.createPlaylist(
+      definition.playlistName,
+      definition.playlistDescription,
+      this.options.playlistPrivate,
+    );
+    await this.rememberPlaylistId(definition.key, created.id);
+    this.logger.info(t("playlistCreated", definition.playlistName));
+
+    if (definition.buildCoverJpeg) {
+      try {
+        const coverJpeg = await definition.buildCoverJpeg();
+        await this.spotifyClient.uploadPlaylistCoverImage(created.id, coverJpeg.toString("base64"));
+        this.logger.info(t("coverUploaded", definition.playlistName));
+      } catch (error) {
+        this.logger.warn(
+          t("coverUploadFailed", definition.playlistName, (error as Error).message),
+        );
+      }
+    }
+
+    return created.id;
+  }
+
   private async forgetPlaylistId(definitionKey: string): Promise<void> {
     this.playlistIdsByDefinitionKey.delete(definitionKey);
     await this.appStateRepository.deleteValue(buildPlaylistIdStateKey(definitionKey));
@@ -329,8 +374,14 @@ function buildPlaylistIdStateKey(definitionKey: string): string {
 }
 
 function isMissingPlaylistError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
   return (
-    error instanceof Error &&
-    (error.message.includes("Spotify request failed (404)") || error.message.includes("Spotify request failed (403)"))
+    error.message.includes("Spotify request failed (404)") ||
+    error.message.includes("Spotify request failed (403)") ||
+    error.message.includes("Spotify API error during") &&
+    (error.message.includes("(404)") || error.message.includes("(403)"))
   );
 }

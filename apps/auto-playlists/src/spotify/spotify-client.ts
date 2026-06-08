@@ -138,13 +138,12 @@ export class SpotifyClient {
   }
 
   public async createPlaylist(
-    userId: string,
     name: string,
     description: string,
     isPrivate = true,
   ): Promise<SpotifyPlaylist> {
     const response = await this.requestWithAuth(
-      `https://api.spotify.com/v1/users/${encodeURIComponent(userId)}/playlists`,
+      "https://api.spotify.com/v1/me/playlists",
       {
         method: "POST",
         headers: {
@@ -164,7 +163,7 @@ export class SpotifyClient {
   }
 
   public async replacePlaylistItems(playlistId: string, trackUris: string[]): Promise<void> {
-    const playlistUrl = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/tracks`;
+    const playlistUrl = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items`;
     const head = trackUris.slice(0, 100);
     const tail = trackUris.slice(100);
 
