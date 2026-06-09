@@ -204,8 +204,10 @@ export class AutoPlaylistsSyncService {
 
       const cachedPlaylistId = await this.readPlaylistId(definition.key);
       if (cachedPlaylistId) {
-        this.playlistIdsByDefinitionKey.set(definition.key, cachedPlaylistId);
-        continue;
+        const resolvedPlaylistId = await this.restoreCachedPlaylistId(definition, cachedPlaylistId);
+        if (resolvedPlaylistId) {
+          continue;
+        }
       }
 
       const existing = await this.spotifyClient.findPlaylistByName(definition.playlistName);
@@ -359,6 +361,24 @@ export class AutoPlaylistsSyncService {
   private async forgetPlaylistId(definitionKey: string): Promise<void> {
     this.playlistIdsByDefinitionKey.delete(definitionKey);
     await this.appStateRepository.deleteValue(buildPlaylistIdStateKey(definitionKey));
+  }
+
+  private async restoreCachedPlaylistId(
+    definition: AutoPlaylistDefinition,
+    cachedPlaylistId: string,
+  ): Promise<string | null> {
+    try {
+      await this.spotifyClient.getPlaylist(cachedPlaylistId);
+      this.playlistIdsByDefinitionKey.set(definition.key, cachedPlaylistId);
+      return cachedPlaylistId;
+    } catch (error) {
+      if (!isMissingPlaylistError(error)) {
+        throw error;
+      }
+    }
+
+    await this.forgetPlaylistId(definition.key);
+    return this.recoverOrCreatePlaylist(definition, cachedPlaylistId);
   }
 }
 

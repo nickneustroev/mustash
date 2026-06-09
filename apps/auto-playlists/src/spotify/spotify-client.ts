@@ -162,6 +162,17 @@ export class SpotifyClient {
     return payload;
   }
 
+  public async getPlaylist(playlistId: string): Promise<SpotifyPlaylist> {
+    const response = await this.requestWithAuth(
+      `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}?fields=id,name`,
+      { method: "GET" },
+      true,
+    );
+
+    const payload = (await response.json()) as SpotifyPlaylist;
+    return payload;
+  }
+
   public async replacePlaylistItems(playlistId: string, trackUris: string[]): Promise<void> {
     const playlistUrl = `https://api.spotify.com/v1/playlists/${encodeURIComponent(playlistId)}/items`;
     const head = trackUris.slice(0, 100);
