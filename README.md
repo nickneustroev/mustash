@@ -59,6 +59,7 @@ SPOTIFY_PROXY_URL=
 # Optional. Leave empty to run without DB-backed history and removed-track archive.
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/spotify_helper
 POLL_INTERVAL_MS=2500
+SPOTIFY_MIN_REQUEST_GAP_MS=50
 
 AUTO_PLAYLISTS_PLAYLIST_PREFIX=
 AUTO_PLAYLISTS_PLAYLIST_SUFFIX=[AUTO]

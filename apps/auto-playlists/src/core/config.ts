@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const DEFAULT_SPOTIFY_REDIRECT_URI = "http://127.0.0.1:3000/callback";
 const DEFAULT_POLL_INTERVAL_MS = 5000;
+const DEFAULT_SPOTIFY_MIN_REQUEST_GAP_MS = 50;
 const DEFAULT_AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS = 600000;
 const DEFAULT_AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS = 10800000;
 const DEFAULT_SAVED_RECENT_COVER_COLOR = "000000";
@@ -34,7 +35,7 @@ const schema = z.object({
   SPOTIFY_CLIENT_SECRET: z.string().min(1),
   SPOTIFY_REDIRECT_URI: optionalEnv(z.string().url()).default(DEFAULT_SPOTIFY_REDIRECT_URI),
   POLL_INTERVAL_MS: optionalEnv(z.coerce.number().int().min(500)).default(DEFAULT_POLL_INTERVAL_MS),
-  SPOTIFY_MIN_REQUEST_GAP_MS: optionalEnv(z.coerce.number().int().min(0)).default(0),
+  SPOTIFY_MIN_REQUEST_GAP_MS: optionalEnv(z.coerce.number().int().min(0)).default(DEFAULT_SPOTIFY_MIN_REQUEST_GAP_MS),
   TRACK_MONITORING_ENABLED: optionalEnv(z.string())
     .transform((v) => v !== "false")
     .default(true),
