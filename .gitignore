@@ -5,7 +5,7 @@ apps/auto-playlists/dist/
 .spotify-tokens*.json
 data/.spotify-tokens*.json
 .history-state.json
-temp/app-state.json
+temp/
 coverage/
 npm-debug.log*
 *.db
