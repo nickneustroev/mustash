@@ -1,6 +1,6 @@
 # Spotify Helper
 
-`Spotify Helper` - это серверное приложение для автоматизации Spotify через Web API. Сейчас основной сценарий - создание автоматических плейлистов ("автоплейлистов") на основе песен, сохранённых у вас в списке избранного (они же `Liked Songs`, они же `Saved Tracks`.
+`Spotify Helper` - это серверное приложение для автоматизации Spotify через Web API. Сейчас основной сценарий - создание автоматических плейлистов ("автоплейлистов") на основе песен, сохранённых у вас в списке избранного (они же `Liked Songs`, они же `Saved Tracks`).
 
 Проект рассчитан на личное использование: вы запускаете его локально или в облачном сервере, авторизуете свой Spotify-аккаунт и дальше приложение само поддерживает нужные плейлисты в актуальном состоянии.
 
@@ -9,11 +9,9 @@
 - Создавать и обновлять плейлисты вида `Recent N [AUTO]` из последних сохраненных треков.
 - Создавать и обновлять плейлисты по годам сохранения, например `2024 [AUTO]`, `2025 [AUTO]`.
 
-При этом будут генерироваться обложки.
+Для создаваемых плейлистов будут генерироваться обложки.
 
 Дополнительно, есть функция, которая будет выводить в логах трек, который играет в данный момент.
-
-Можно указать доступы к базе Postgres, и приложение будет сохранять туда историю всего прослушанного, а также список треков, удалённых из избранного.
 
 ## Требования
 
@@ -42,6 +40,25 @@
 
 - `.env.minimal.example` - минимальный набор для автоплейлистов;
 - `.env.full.example` - полный набор со всеми поддерживаемыми параметрами.
+
+Основные параметры:
+
+- `APP_LOCALE` - язык логов: `EN` или `RU`.
+- `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` - доступ к Spotify API.
+- `SPOTIFY_REDIRECT_URI` - callback URL для OAuth.
+- `SPOTIFY_LISTEN_PORT` - локальный порт callback-сервера.
+- `SPOTIFY_PROXY_URL` - прокси для доступа к Spotify API, если прямое соединение недоступно.
+- `SAVED_RECENT_WINDOWS` - список размеров плейлистов последних треков через запятую, например `50,200,500`.
+- `SAVED_IN_YEAR_YEARS` - список годов для годовых автоплейлистов.
+- `TRACK_MONITORING_ENABLED` - включение логирования текущего трека.
+- `AUTO_PLAYLISTS_PLAYLIST_PREFIX` и `AUTO_PLAYLISTS_PLAYLIST_SUFFIX` - оформление имен плейлистов.
+- `SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR` - цвета обложек в формате HEX без `#`.
+- `AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS` - интервал обновления recent-плейлистов.
+- `AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS` - интервал обновления year-плейлистов.
+- `POLL_INTERVAL_MS` - интервал проверки текущего трека.
+- `SPOTIFY_MIN_REQUEST_GAP_MS` - минимальная пауза между запросами к Spotify API.
+
+Если `DATABASE_URL` не задан, приложение продолжит работу без функций, зависящих от БД. В этом режиме OAuth-токены и runtime state сохраняются локально в `temp/app-state.json`.
 
 Минимальный пример:
 
@@ -83,26 +100,6 @@ POLL_INTERVAL_MS=5000
 SPOTIFY_MIN_REQUEST_GAP_MS=100
 ```
 
-Основные параметры:
-
-- `APP_LOCALE` - язык логов: `EN` или `RU`.
-- `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` - доступ к Spotify API.
-- `SPOTIFY_REDIRECT_URI` - callback URL для OAuth.
-- `SPOTIFY_LISTEN_PORT` - локальный порт callback-сервера.
-- `SPOTIFY_PROXY_URL` - прокси для доступа к Spotify API, если прямое соединение недоступно.
-- `DATABASE_URL` - строка подключения к Postgres. Необязательно. В текущей версии не рекомендуется пользоваться этим.
-- `SAVED_RECENT_WINDOWS` - список размеров плейлистов последних треков через запятую, например `50,200,500`.
-- `SAVED_IN_YEAR_YEARS` - список годов для годовых автоплейлистов.
-- `TRACK_MONITORING_ENABLED` - включение логирования текущего трека.
-- `AUTO_PLAYLISTS_PLAYLIST_PREFIX` и `AUTO_PLAYLISTS_PLAYLIST_SUFFIX` - оформление имен плейлистов.
-- `SAVED_RECENT_COVER_COLOR`, `SAVED_IN_YEAR_COVER_COLOR` - цвета обложек в формате HEX без `#`.
-- `AUTO_PLAYLISTS_FREQUENT_SYNC_INTERVAL_MS` - интервал обновления recent-плейлистов.
-- `AUTO_PLAYLISTS_RARE_SYNC_INTERVAL_MS` - интервал обновления year-плейлистов.
-- `POLL_INTERVAL_MS` - интервал проверки текущего трека.
-- `SPOTIFY_MIN_REQUEST_GAP_MS` - минимальная пауза между запросами к Spotify API.
-
-Если `DATABASE_URL` не задан, приложение продолжит работу без функций, зависящих от БД. В этом режиме OAuth-токены и runtime state сохраняются локально в `temp/app-state.json`.
-
 ## Локальный запуск
 
 1. Установите зависимости:
@@ -113,14 +110,7 @@ npm install
 
 2. Создайте `.env` на основе одного из шаблонов и заполните обязательные параметры.
 
-3. Если используете Postgres, сгенерируйте Prisma Client и примените миграции:
-
-```bash
-npm run prisma:generate
-npm run prisma:migrate:dev
-```
-
-4. Запустите приложение в dev-режиме:
+3. Для запуска в дев-режиме
 
 ```bash
 npm run dev
@@ -128,7 +118,7 @@ npm run dev
 
 ИЛИ
 
-4. Production-запуск:
+3. Для запуска в прод-режиме:
 
 ```bash
 npm run build
