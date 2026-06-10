@@ -125,7 +125,7 @@ describe("auto-playlists config parsers", () => {
 
     expect(config.spotifyRedirectUri).toBe("http://127.0.0.1:3000/callback");
     expect(config.pollIntervalMs).toBe(5000);
-    expect(config.spotifyMinRequestGapMs).toBe(50);
+    expect(config.spotifyMinRequestGapMs).toBe(100);
     expect(config.trackMonitoringEnabled).toBe(true);
     expect(config.databaseUrl).toBe("");
     expect(config.autoPlaylistsPlaylistPrefix).toBe("");
@@ -174,7 +174,7 @@ describe("auto-playlists config parsers", () => {
 
     expect(config.spotifyRedirectUri).toBe("http://127.0.0.1:3000/callback");
     expect(config.pollIntervalMs).toBe(5000);
-    expect(config.spotifyMinRequestGapMs).toBe(50);
+    expect(config.spotifyMinRequestGapMs).toBe(100);
     expect(config.trackMonitoringEnabled).toBe(true);
     expect(config.databaseUrl).toBe("");
     expect(config.autoPlaylistsPlaylistPrefix).toBe("");
