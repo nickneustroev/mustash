@@ -61,6 +61,7 @@ describe("AutoPlaylistsSyncService", () => {
 
     const spotifyClient = {
       getCurrentUserId,
+      hasPlaylistInLibrary: vi.fn().mockRejectedValue(new Error("unexpected hasPlaylistInLibrary call")),
       getPlaylist: vi.fn().mockRejectedValue(new Error("unexpected getPlaylist call")),
       findPlaylistByName,
       createPlaylist,
@@ -125,6 +126,7 @@ describe("AutoPlaylistsSyncService", () => {
   it("archives removed tracks from previous snapshot", async () => {
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       createPlaylist: vi.fn(),
@@ -200,6 +202,7 @@ describe("AutoPlaylistsSyncService", () => {
   it("skips removed tracks archive when DB persistence is disabled", async () => {
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       createPlaylist: vi.fn(),
@@ -262,6 +265,7 @@ describe("AutoPlaylistsSyncService", () => {
   it("logs completed sync with updated playlist count", async () => {
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       createPlaylist: vi.fn(),
@@ -306,6 +310,7 @@ describe("AutoPlaylistsSyncService", () => {
   it("reuses cached playlist ids from app state without searching by name", async () => {
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "cached-playlist-id", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn(),
       createPlaylist: vi.fn(),
@@ -352,6 +357,7 @@ describe("AutoPlaylistsSyncService", () => {
 
     expect(localAppState.getValue).toHaveBeenCalledWith("auto_playlists:playlist_id:saved-recent:2");
     expect((spotifyClient as { getPlaylist: ReturnType<typeof vi.fn> }).getPlaylist).toHaveBeenCalledWith("cached-playlist-id");
+    expect((spotifyClient as { hasPlaylistInLibrary: ReturnType<typeof vi.fn> }).hasPlaylistInLibrary).toHaveBeenCalledWith("cached-playlist-id");
     expect((spotifyClient as { findPlaylistByName: ReturnType<typeof vi.fn> }).findPlaylistByName).not.toHaveBeenCalled();
     expect((spotifyClient as { createPlaylist: ReturnType<typeof vi.fn> }).createPlaylist).not.toHaveBeenCalled();
     expect(
@@ -359,11 +365,73 @@ describe("AutoPlaylistsSyncService", () => {
     ).toHaveBeenCalledWith("cached-playlist-id", ["spotify:track:a"]);
   });
 
+  it("recreates a cached playlist when it is no longer present in the Spotify library", async () => {
+    const createPlaylist = vi.fn().mockResolvedValue({ id: "replacement-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
+    const replacePlaylistItems = vi.fn().mockResolvedValue(undefined);
+    const spotifyClient = {
+      getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(false),
+      getPlaylist: vi.fn().mockResolvedValue({ id: "cached-playlist-id", name: "SAVED RECENT 2 [AUTO]" }),
+      findPlaylistByName: vi.fn().mockResolvedValue(null),
+      createPlaylist,
+      replacePlaylistItems,
+      uploadPlaylistCoverImage: vi.fn(),
+    } as unknown as SpotifyClient;
+
+    const savedTracksSource = {
+      getSavedTracks: vi.fn().mockResolvedValue([buildSavedTrack("a")]),
+    } as unknown as SavedTracksSource;
+
+    const localAppState: AppStateRepository = {
+      ...appStateRepository,
+      getValue: vi
+        .fn()
+        .mockResolvedValueOnce("cached-playlist-id")
+        .mockResolvedValueOnce(null),
+      setValue: vi.fn().mockResolvedValue(undefined),
+      deleteValue: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const service = new AutoPlaylistsSyncService(
+      spotifyClient,
+      savedTracksSource,
+      archiveRepository,
+      localAppState,
+      log,
+      {
+        definitions: [
+          {
+            key: "saved-recent:2",
+            playlistName: "SAVED RECENT 2 [AUTO]",
+            playlistDescription: "Auto-maintained recent saved tracks (2).",
+            resolveTrackUris: (savedTracks) => savedTracks.map((track) => track.trackUri),
+          },
+        ],
+        syncIntervalMs: 15000,
+        playlistPrivate: true,
+        syncModeName: "frequent",
+      },
+    );
+
+    (service as unknown as { stopped: boolean }).stopped = false;
+    await service.syncNow();
+
+    expect((spotifyClient as { getPlaylist: ReturnType<typeof vi.fn> }).getPlaylist).toHaveBeenCalledWith("cached-playlist-id");
+    expect((spotifyClient as { hasPlaylistInLibrary: ReturnType<typeof vi.fn> }).hasPlaylistInLibrary).toHaveBeenCalledWith("cached-playlist-id");
+    expect(createPlaylist).toHaveBeenCalledWith(
+      "SAVED RECENT 2 [AUTO]",
+      "Auto-maintained recent saved tracks (2).",
+      true,
+    );
+    expect(replacePlaylistItems).toHaveBeenCalledWith("replacement-playlist-id", ["spotify:track:a"]);
+  });
+
   it("reuses an existing playlist by name in the same sync cycle after cached playlist id fails", async () => {
     const replacePlaylistItems = vi.fn().mockResolvedValue(undefined);
     const findPlaylistByName = vi.fn().mockResolvedValue({ id: "recovered-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn(),
       getPlaylist: vi.fn().mockRejectedValue(new Error("Spotify request failed (404): not found")),
       findPlaylistByName,
       createPlaylist: vi.fn(),
@@ -424,6 +492,7 @@ describe("AutoPlaylistsSyncService", () => {
     const uploadPlaylistCoverImage = vi.fn().mockResolvedValue(undefined);
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn(),
       getPlaylist: vi.fn().mockRejectedValue(new Error("Spotify request failed (404): not found")),
       findPlaylistByName: vi.fn().mockResolvedValue(null),
       createPlaylist,
@@ -488,6 +557,7 @@ describe("AutoPlaylistsSyncService", () => {
     const createPlaylist = vi.fn().mockResolvedValue({ id: "replacement-playlist-id", name: "SAVED RECENT 2 [AUTO]" });
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn(),
       getPlaylist: vi.fn().mockRejectedValue(new Error('Spotify API error during GET /v1/playlists/forbidden-playlist-id (403): {"error":{"status":403,"message":"Forbidden"}}')),
       findPlaylistByName,
       createPlaylist,
@@ -552,6 +622,7 @@ describe("AutoPlaylistsSyncService", () => {
       .mockResolvedValueOnce(undefined);
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "missing-playlist-id", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn().mockResolvedValue({ id: "recovered-playlist-id", name: "SAVED RECENT 2 [AUTO]" }),
       createPlaylist: vi.fn(),
@@ -604,6 +675,7 @@ describe("AutoPlaylistsSyncService", () => {
   it("uses saved track requirements instead of forcing full catalog fetch", async () => {
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       createPlaylist: vi.fn(),
@@ -648,6 +720,7 @@ describe("AutoPlaylistsSyncService", () => {
   it("backs off when Spotify rate limits the current sync mode", async () => {
     const spotifyClient = {
       getCurrentUserId: vi.fn(),
+      hasPlaylistInLibrary: vi.fn(),
       getPlaylist: vi.fn(),
       findPlaylistByName: vi.fn().mockRejectedValue(new SpotifyRateLimitError(30)),
       createPlaylist: vi.fn(),
@@ -691,6 +764,7 @@ describe("AutoPlaylistsSyncService", () => {
 
     const spotifyClient = {
       getCurrentUserId: vi.fn().mockResolvedValue("user-1"),
+      hasPlaylistInLibrary: vi.fn().mockResolvedValue(true),
       getPlaylist: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       findPlaylistByName: vi.fn().mockResolvedValue({ id: "p2", name: "SAVED RECENT 2 [AUTO]" }),
       createPlaylist: vi.fn(),

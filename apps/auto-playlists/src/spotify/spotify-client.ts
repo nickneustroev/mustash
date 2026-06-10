@@ -71,6 +71,7 @@ export class SpotifyClient {
   private rateLimitedUntilEpochMs = 0;
   private lastRequestStartedAtEpochMs = 0;
   private requestQueue: Promise<void> = Promise.resolve();
+  private currentUserId: string | null = null;
 
   constructor(auth: AuthManager, cfg: SpotifyClientConfig, log: Logger, fetchImpl: typeof fetch = fetch) {
     this.auth = auth;
@@ -116,9 +117,29 @@ export class SpotifyClient {
   }
 
   public async getCurrentUserId(): Promise<string> {
+    if (this.currentUserId) {
+      return this.currentUserId;
+    }
+
     const response = await this.requestWithAuth("https://api.spotify.com/v1/me", { method: "GET" }, true);
     const payload = (await response.json()) as SpotifyCurrentUserResponse;
+    this.currentUserId = payload.id;
     return payload.id;
+  }
+
+  public async hasPlaylistInLibrary(playlistId: string): Promise<boolean> {
+    let nextUrl: string | null = "https://api.spotify.com/v1/me/playlists?limit=50";
+
+    while (nextUrl) {
+      const response = await this.requestWithAuth(nextUrl, { method: "GET" }, true);
+      const payload = (await response.json()) as SpotifyPlaylistsPage;
+      if (payload.items.some((item) => item.id === playlistId)) {
+        return true;
+      }
+      nextUrl = payload.next;
+    }
+
+    return false;
   }
 
   public async findPlaylistByName(name: string): Promise<SpotifyPlaylist | null> {

@@ -369,6 +369,12 @@ export class AutoPlaylistsSyncService {
   ): Promise<string | null> {
     try {
       await this.spotifyClient.getPlaylist(cachedPlaylistId);
+      const hasPlaylistInLibrary = await this.spotifyClient.hasPlaylistInLibrary(cachedPlaylistId);
+      if (!hasPlaylistInLibrary) {
+        await this.forgetPlaylistId(definition.key);
+        return this.recoverOrCreatePlaylist(definition, cachedPlaylistId);
+      }
+
       this.playlistIdsByDefinitionKey.set(definition.key, cachedPlaylistId);
       return cachedPlaylistId;
     } catch (error) {
