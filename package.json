@@ -2,7 +2,7 @@
   "name": "spotify-track-console-notifier",
   "description": "Local CLI app that prints current Spotify track on change",
   "version": "1.0.0",
-  "license": "ISC",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
