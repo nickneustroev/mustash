@@ -23,6 +23,4 @@ services:
       SAVED_RECENT_WINDOWS:
       SAVED_IN_YEAR_YEARS:
       APP_LOCALE:
-    ports:
-      - "${SPOTIFY_LISTEN_PORT}:${SPOTIFY_LISTEN_PORT}"
     restart: unless-stopped
