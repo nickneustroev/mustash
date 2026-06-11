@@ -1,6 +1,6 @@
 {
-  "name": "spotify-track-console-notifier",
-  "description": "Local CLI app that prints current Spotify track on change",
+  "name": "mustash",
+  "description": "Mustash - Music Streaming Assistant Hub",
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
