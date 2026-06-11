@@ -23,4 +23,6 @@ services:
       SAVED_RECENT_WINDOWS:
       SAVED_IN_YEAR_YEARS:
       APP_LOCALE:
+    ports:
+      - "3000:3000"
     restart: unless-stopped

@@ -1,4 +1,0 @@
-services:
-  auto-playlists:
-    ports:
-      - "${SPOTIFY_LISTEN_PORT:-3000}:${SPOTIFY_LISTEN_PORT:-3000}"
