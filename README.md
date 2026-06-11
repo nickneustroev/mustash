@@ -46,7 +46,6 @@
 - `APP_LOCALE` - язык логов: `EN` или `RU`.
 - `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` - доступ к Spotify API.
 - `SPOTIFY_REDIRECT_URI` - callback URL для OAuth.
-- `SPOTIFY_LISTEN_PORT` - локальный порт callback-сервера.
 - `SPOTIFY_PROXY_URL` - прокси для доступа к Spotify API, если прямое соединение недоступно.
 - `SAVED_RECENT_WINDOWS` - список размеров плейлистов последних треков через запятую, например `50,200,500`.
 - `SAVED_IN_YEAR_YEARS` - список годов для годовых автоплейлистов.
@@ -66,7 +65,6 @@
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/callback
-SPOTIFY_LISTEN_PORT=3000
 
 SAVED_RECENT_WINDOWS=50,200
 SAVED_IN_YEAR_YEARS=2024,2025
@@ -80,7 +78,6 @@ APP_LOCALE=RU
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/callback
-SPOTIFY_LISTEN_PORT=3000
 
 SPOTIFY_PROXY_URL=
 DATABASE_URL=

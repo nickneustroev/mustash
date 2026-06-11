@@ -252,7 +252,7 @@ function isLoopbackHost(host: string): boolean {
 }
 
 function resolveListenPort(redirectUrl: URL): number {
-  const fromEnv = process.env.PORT ?? process.env.SPOTIFY_LISTEN_PORT;
+  const fromEnv = process.env.PORT;
   if (fromEnv) {
     const parsed = Number(fromEnv);
     if (Number.isInteger(parsed) && parsed > 0 && parsed <= 65535) {
