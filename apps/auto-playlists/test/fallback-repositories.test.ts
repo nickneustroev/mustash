@@ -7,7 +7,7 @@ import { FileAppStateRepository } from "../src/persistence/fallback-repositories
 let tempDir: string | null = null;
 
 async function createTempFilePath(): Promise<string> {
-  tempDir = await mkdtemp(join(tmpdir(), "spotify-helper-app-state-"));
+  tempDir = await mkdtemp(join(tmpdir(), "mustash-app-state-"));
   return join(tempDir, "app-state.json");
 }
 
