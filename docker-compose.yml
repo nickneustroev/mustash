@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: apps/auto-playlists/Dockerfile
-    container_name: auto-playlists
     environment:
       NODE_ENV: production
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
