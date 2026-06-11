@@ -252,14 +252,20 @@ function isLoopbackHost(host: string): boolean {
 }
 
 function resolveListenPort(redirectUrl: URL): number {
-  const fromEnv = process.env.SPOTIFY_LISTEN_PORT ?? process.env.PORT;
+  const fromEnv = process.env.PORT ?? process.env.SPOTIFY_LISTEN_PORT;
   if (fromEnv) {
     const parsed = Number(fromEnv);
     if (Number.isInteger(parsed) && parsed > 0 && parsed <= 65535) {
       return parsed;
     }
   }
-  return Number(redirectUrl.port || (redirectUrl.protocol === "https:" ? 443 : 80));
+
+  const fromRedirectUri = Number(redirectUrl.port);
+  if (Number.isInteger(fromRedirectUri) && fromRedirectUri > 0 && fromRedirectUri <= 65535) {
+    return fromRedirectUri;
+  }
+
+  return 3000;
 }
 
 function basicAuthHeader(clientId: string, clientSecret: string): string {
